@@ -8,8 +8,8 @@ static const unsigned int gappov      = 10;
 static int smartgaps                  = 1;
 static const int showbar              = 1;
 static const int topbar               = 1;
-static const char *fonts[]            = { "monospace:size=10" };
-static const char dmenufont[]         = "monospace:size=10";
+static const char *fonts[]            = { "Mononoki Nerd Font:size=12" };
+static const char dmenufont[]         = "Mononoki Nerd Font:size=12";
 static const char col_gray1[]         = "#222222";
 static const char col_gray2[]         = "#444444";
 static const char col_gray3[]         = "#bbbbbb";
@@ -32,7 +32,15 @@ static const unsigned int alphas[][3] = {
 
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
-static const Rule rules[0];
+static const Rule rules[] = {
+	/* xprop(1):
+	 *	WM_CLASS(STRING) = instance, class
+	 *	WM_NAME(STRING) = title
+	 */
+	/* class                  instance    title       tags mask     isfloating   monitor */
+	{ "Picture-in-Picture",   NULL,       NULL,       0,            1,           -1 },
+};
+
 
 /* layout(s) */
 static const float mfact            = 0.60; /* factor of master area size [0.05..0.95] */
@@ -76,8 +84,8 @@ static const Key keys[] = {
 	{ MODKEY,           XK_b,      togglebar,      {0} },
 	{ MODKEY,           XK_j,      focusstack,     {.i = +1 } },
 	{ MODKEY,           XK_k,      focusstack,     {.i = -1 } },
-	{ MODKEY,           XK_equal,  incnmaster,     {.i = +1 } },
-	{ MODKEY,           XK_minus,  incnmaster,     {.i = -1 } },
+	{ MODKEY|ShiftMask, XK_l,      incnmaster,     {.i = +1 } },
+	{ MODKEY|ShiftMask, XK_h,      incnmaster,     {.i = -1 } },
 	{ MODKEY,           XK_h,      setmfact,       {.f = -0.05} },
 	{ MODKEY,           XK_l,      setmfact,       {.f = +0.05} },
 	{ MODKEY,           XK_v,      zoom,           {0} },
@@ -93,6 +101,7 @@ static const Key keys[] = {
 	// apps
 	{ MODKEY,           XK_w,      spawn,          SHCMD("firefox") },
 	{ MODKEY,           XK_t,      spawn,          SHCMD("telegram-desktop") },
+	{ MODKEY|ShiftMask, XK_s,      spawn,          SHCMD("flameshot gui") },
 	
 	/*
 	{ MODKEY,           XK_comma,  focusmon,       {.i = -1 } },
