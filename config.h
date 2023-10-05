@@ -37,8 +37,8 @@ static const Rule rules[] = {
 	 *	WM_CLASS(STRING) = instance, class
 	 *	WM_NAME(STRING) = title
 	 */
-	/* class                  instance    title       tags mask     isfloating   monitor */
-	{ "Picture-in-Picture",   NULL,       NULL,       0,            1,           -1 },
+	/* class       instance    title                       tags mask     isfloating   monitor */
+	{ "Firefox",   NULL,       "Picture-in-Picture",       0,            1,           -1 },
 };
 
 
@@ -69,7 +69,7 @@ static const Layout layouts[] = {
 	{ MODKEY|ControlMask|ShiftMask, KEY,      toggleview,     {.ui = 1 << TAG} }, \
 
 /* helper for spawning shell commands in the pre dwm-5.0 fashion */
-#define SHCMD(cmd) { .v = (const char*[]){ cmd, NULL } }
+#define SHCMD(...) { .v = (const char*[]){ __VA_ARGS__, NULL } }
 
 /* commands */
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
@@ -88,20 +88,24 @@ static const Key keys[] = {
 	{ MODKEY|ShiftMask, XK_h,      incnmaster,     {.i = -1 } },
 	{ MODKEY,           XK_h,      setmfact,       {.f = -0.05} },
 	{ MODKEY,           XK_l,      setmfact,       {.f = +0.05} },
-	{ MODKEY,           XK_v,      zoom,           {0} },
+	{ MODKEY,           XK_c,      zoom,           {0} },
 	{ MODKEY,           XK_Tab,    view,           {0} },
 	{ MODKEY,           XK_q,      killclient,     {0} },
-	// layouts
+
+	// layout
 	{ MODKEY,           XK_t,      setlayout,      {.v = &layouts[0]} },
 	{ MODKEY,           XK_m,      setlayout,      {.v = &layouts[2]} },
 	{ MODKEY,           XK_f,      togglefullscr,  {0} },
 	{ MODKEY|ShiftMask, XK_f,      togglefloating, {0} },
 	{ MODKEY,           XK_0,      view,           {.ui = ~0 } },
 	{ MODKEY|ShiftMask, XK_0,      tag,            {.ui = ~0 } },
+
 	// apps
 	{ MODKEY,           XK_w,      spawn,          SHCMD("firefox") },
 	{ MODKEY,           XK_t,      spawn,          SHCMD("telegram-desktop") },
-	{ MODKEY|ShiftMask, XK_s,      spawn,          SHCMD("flameshot gui") },
+	{ MODKEY|ShiftMask, XK_s,      spawn,          SHCMD("flameshot", "gui") },
+	{ MODKEY,           XK_i,      spawn,          SHCMD("dunstctl", "history-pop") },
+	{ MODKEY,           XK_o,      spawn,          SHCMD("dunstctl", "close") },
 	
 	/*
 	{ MODKEY,           XK_comma,  focusmon,       {.i = -1 } },
