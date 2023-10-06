@@ -110,6 +110,7 @@ typedef struct {
 
 typedef struct {
 	const char *symbol;
+	const char *symbolrev;
 	void (*arrange)(Monitor *);
 } Layout;
 
@@ -413,7 +414,11 @@ arrange(Monitor *m)
 void
 arrangemon(Monitor *m)
 {
-	strncpy(m->ltsymbol, m->lt[m->sellt]->symbol, sizeof m->ltsymbol);
+	if (spawnmaster) {
+		strncpy(selmon->ltsymbol, selmon->lt[selmon->sellt]->symbol, sizeof selmon->ltsymbol);
+	} else {
+		strncpy(selmon->ltsymbol, selmon->lt[selmon->sellt]->symbolrev, sizeof selmon->ltsymbol);
+	}
 	if (m->lt[m->sellt]->arrange)
 		m->lt[m->sellt]->arrange(m);
 }
@@ -673,7 +678,11 @@ createmon(void)
 	m->gappov = gappov;
 	m->lt[0] = &layouts[0];
 	m->lt[1] = &layouts[1 % LENGTH(layouts)];
-	strncpy(m->ltsymbol, layouts[0].symbol, sizeof m->ltsymbol);
+	if (spawnmaster) {
+		strncpy(m->ltsymbol, layouts[0].symbol, sizeof m->ltsymbol);
+	} else {
+		strncpy(m->ltsymbol, layouts[0].symbolrev, sizeof m->ltsymbol);
+	}
 	return m;
 }
 
@@ -1021,7 +1030,18 @@ incnmaster(const Arg *arg)
 static void
 invertdir(const Arg *arg)
 {
-	inversedirection = !inversedirection;
+	spawnmaster = !spawnmaster;
+	
+	if (spawnmaster) {
+		strncpy(selmon->ltsymbol, selmon->lt[selmon->sellt]->symbol, sizeof selmon->ltsymbol);
+	} else {
+		strncpy(selmon->ltsymbol, selmon->lt[selmon->sellt]->symbolrev, sizeof selmon->ltsymbol);
+	}
+
+	if (selmon->sel)
+		arrange(selmon);
+	else
+		drawbar(selmon);
 }
 
 #ifdef XINERAMA
@@ -1115,10 +1135,10 @@ manage(Window w, XWindowAttributes *wa)
 		c->isfloating = c->oldstate = trans != None || c->isfixed;
 	if (c->isfloating)
 		XRaiseWindow(dpy, c->win);
-	if (inversedirection) {
-	    attachbottom(c);
-	} else {
+	if (spawnmaster) {
 	    attach(c);
+	} else {
+	    attachbottom(c);
 	}
 	attachstack(c);
 	XChangeProperty(dpy, root, netatom[NetClientList], XA_WINDOW, 32, PropModeAppend,
@@ -1477,10 +1497,10 @@ sendmon(Client *c, Monitor *m)
 	detachstack(c);
 	c->mon = m;
 	c->tags = m->tagset[m->seltags]; /* assign tags of target monitor */
-	if (inversedirection) {
-	    attachbottom(c);
-	} else {
+	if (spawnmaster) {
 	    attach(c);
+	} else {
+	    attachbottom(c);
 	}
 	attachstack(c);
 	focus(NULL);
@@ -1568,7 +1588,11 @@ setlayout(const Arg *arg)
 		selmon->sellt ^= 1;
 	if (arg && arg->v)
 		selmon->lt[selmon->sellt] = (Layout *)arg->v;
-	strncpy(selmon->ltsymbol, selmon->lt[selmon->sellt]->symbol, sizeof selmon->ltsymbol);
+	if (spawnmaster) {
+		strncpy(selmon->ltsymbol, selmon->lt[selmon->sellt]->symbol, sizeof selmon->ltsymbol);
+	} else {
+		strncpy(selmon->ltsymbol, selmon->lt[selmon->sellt]->symbolrev, sizeof selmon->ltsymbol);
+	}
 	if (selmon->sel)
 		arrange(selmon);
 	else
@@ -1985,10 +2009,10 @@ updategeom(void)
 				m->clients = c->next;
 				detachstack(c);
 				c->mon = mons;
-				if (inversedirection) {
-				    attachbottom(c);
-				} else {
+				if (spawnmaster) {
 				    attach(c);
+				} else {
+				    attachbottom(c);
 				}
 				attach(c);
 				attachstack(c);

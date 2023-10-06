@@ -8,7 +8,7 @@ static const unsigned int gappov      = 10;
 static int smartgaps                  = 1;
 static const int showbar              = 1;
 static const int topbar               = 1;
-static const char *fonts[]            = { "Mononoki Nerd Font:size=12", "Noto Color Emoji" };
+static const char *fonts[]            = { "Mononoki Nerd Font:size=12", "Noto Color Emoji:size=11" };
 static const char dmenufont[]         = "Mononoki Nerd Font:size=12";
 static const char col_gray1[]         = "#222222";
 static const char col_gray2[]         = "#444444";
@@ -47,17 +47,17 @@ static const float mfact = 0.60;
 static const int nmaster = 1;
 static const int resizehints = 1;
 static const int lockfullscreen = 1;
-int inversedirection = 1;
+int spawnmaster = 0;
 
 #define FORCE_VSPLIT 1
 #include "vanitygaps.c"
 
 static const Layout layouts[] = {
-	/* symbol     arrange function */
-        { "[\\]",     dwindle},
-	{ "[]=",      tile },
-	{ "[M]",      monocle },
-	{ "><>",      NULL },
+	/* symbol  reverse  function */
+        { "[/]",   "[\\]",  dwindle},
+	{ "[]=",   "=[]",   tile },
+	{ "[M]",   "[M]",   monocle },
+	{ "><>",   "<><",   NULL },
 };
 
 /* key definitions */
