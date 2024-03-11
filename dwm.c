@@ -20,10 +20,8 @@
  *
  * To understand everything else, start reading main().
  */
-#include <errno.h>
 #include <locale.h>
 #include <signal.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -131,6 +129,7 @@ struct Monitor {
 	unsigned int tagset[2];
 	int showbar;
 	int topbar;
+	int spawnmaster;
 	Client *clients;
 	Client *sel;
 	Client *stack;
@@ -177,6 +176,7 @@ static void focus(Client *c);
 static void focusin(XEvent *e);
 static void focusmon(const Arg *arg);
 static void focusstack(const Arg *arg);
+static void focustagmon(const Arg *arg);
 static Atom getatomprop(Client *c, Atom prop);
 static int getrootptr(int *x, int *y);
 static long getstate(Window w);
@@ -215,6 +215,8 @@ static void setmfact(const Arg *arg);
 static void setup(void);
 static void seturgent(Client *c, int urg);
 static void showhide(Client *c);
+static void sighup(int unused);
+static void sigterm(int unused);
 static int solitary(Client *c);
 static void spawn(const Arg *arg);
 static void tag(const Arg *arg);
@@ -244,7 +246,7 @@ static Monitor *wintomon(Window w);
 static int xerror(Display *dpy, XErrorEvent *ee);
 static int xerrordummy(Display *dpy, XErrorEvent *ee);
 static int xerrorstart(Display *dpy, XErrorEvent *ee);
-static void xinitvisual();
+static void xinitvisual(void);
 static void zoom(const Arg *arg);
 
 /* variables */
@@ -273,6 +275,7 @@ static void (*handler[LASTEvent]) (XEvent *) = {
 	[UnmapNotify] = unmapnotify
 };
 static Atom wmatom[WMLast], netatom[NetLast];
+static int restart = 0;
 static int running = 1;
 static Cur *cursor[CurLast];
 static Clr **scheme;
@@ -414,11 +417,8 @@ arrange(Monitor *m)
 void
 arrangemon(Monitor *m)
 {
-	if (spawnmaster) {
-		strncpy(selmon->ltsymbol, selmon->lt[selmon->sellt]->symbol, sizeof selmon->ltsymbol);
-	} else {
-		strncpy(selmon->ltsymbol, selmon->lt[selmon->sellt]->symbolrev, sizeof selmon->ltsymbol);
-	}
+	const char *symbol = m->spawnmaster ? selmon->lt[selmon->sellt]->symbol : selmon->lt[selmon->sellt]->symbolrev;
+	strncpy(selmon->ltsymbol, symbol, sizeof selmon->ltsymbol);
 	if (m->lt[m->sellt]->arrange)
 		m->lt[m->sellt]->arrange(m);
 }
@@ -665,6 +665,7 @@ Monitor *
 createmon(void)
 {
 	Monitor *m;
+	const char *symbol = spawnmaster ? layouts[0].symbol : layouts[0].symbolrev;
 
 	m = ecalloc(1, sizeof(Monitor));
 	m->tagset[0] = m->tagset[1] = 1;
@@ -678,11 +679,8 @@ createmon(void)
 	m->gappov = gappov;
 	m->lt[0] = &layouts[0];
 	m->lt[1] = &layouts[1 % LENGTH(layouts)];
-	if (spawnmaster) {
-		strncpy(m->ltsymbol, layouts[0].symbol, sizeof m->ltsymbol);
-	} else {
-		strncpy(m->ltsymbol, layouts[0].symbolrev, sizeof m->ltsymbol);
-	}
+	m->spawnmaster = spawnmaster;
+	strncpy(m->ltsymbol, symbol, sizeof m->ltsymbol);
 	return m;
 }
 
@@ -904,6 +902,14 @@ focusstack(const Arg *arg)
 	}
 }
 
+void
+focustagmon(const Arg *arg)
+{
+	tagmon(arg);
+	// for (Monitor *m = selmon; m == selmon; focusmon(arg)); // ffs it just doesn't work properly...
+	focusmon(arg);
+}
+
 Atom
 getatomprop(Client *c, Atom prop)
 {
@@ -1030,13 +1036,9 @@ incnmaster(const Arg *arg)
 static void
 invertdir(const Arg *arg)
 {
-	spawnmaster = !spawnmaster;
-	
-	if (spawnmaster) {
-		strncpy(selmon->ltsymbol, selmon->lt[selmon->sellt]->symbol, sizeof selmon->ltsymbol);
-	} else {
-		strncpy(selmon->ltsymbol, selmon->lt[selmon->sellt]->symbolrev, sizeof selmon->ltsymbol);
-	}
+	selmon->spawnmaster = !selmon->spawnmaster;
+	const char *symbol = selmon->spawnmaster ? selmon->lt[selmon->sellt]->symbol : selmon->lt[selmon->sellt]->symbolrev;
+	strncpy(selmon->ltsymbol, symbol, sizeof selmon->ltsymbol);
 
 	if (selmon->sel)
 		arrange(selmon);
@@ -1135,22 +1137,28 @@ manage(Window w, XWindowAttributes *wa)
 		c->isfloating = c->oldstate = trans != None || c->isfixed;
 	if (c->isfloating)
 		XRaiseWindow(dpy, c->win);
-	if (spawnmaster) {
+
+	if (c->mon->spawnmaster)
 	    attach(c);
-	} else {
+	else
 	    attachbottom(c);
-	}
+
 	attachstack(c);
 	XChangeProperty(dpy, root, netatom[NetClientList], XA_WINDOW, 32, PropModeAppend,
 		(unsigned char *) &(c->win), 1);
 	XMoveResizeWindow(dpy, c->win, c->x + 2 * sw, c->y, c->w, c->h); /* some windows require this */
 	setclientstate(c, NormalState);
+
+	Client *old_sel = NULL;
+	// this won't work if a new window pops up on another monitor with a fullscreen sel
+	if (c->mon == selmon && (selmon->sel && selmon->sel->isfullscreen))
+		old_sel = selmon->sel;
 	if (c->mon == selmon)
 		unfocus(selmon->sel, 0);
 	c->mon->sel = c;
 	arrange(c->mon);
 	XMapWindow(dpy, c->win);
-	focus(NULL);
+	focus(old_sel);
 }
 
 void
@@ -1323,6 +1331,7 @@ propertynotify(XEvent *e)
 void
 quit(const Arg *arg)
 {
+	if(arg->i) restart = 1;
 	running = 0;
 }
 
@@ -1492,16 +1501,17 @@ sendmon(Client *c, Monitor *m)
 {
 	if (c->mon == m)
 		return;
-	unfocus(c, 1);
+	unfocus(c, 0);
 	detach(c);
 	detachstack(c);
 	c->mon = m;
 	c->tags = m->tagset[m->seltags]; /* assign tags of target monitor */
-	if (spawnmaster) {
+
+	if (m->spawnmaster)
 	    attach(c);
-	} else {
+	else
 	    attachbottom(c);
-	}
+
 	attachstack(c);
 	focus(NULL);
 	arrange(NULL);
@@ -1588,11 +1598,8 @@ setlayout(const Arg *arg)
 		selmon->sellt ^= 1;
 	if (arg && arg->v)
 		selmon->lt[selmon->sellt] = (Layout *)arg->v;
-	if (spawnmaster) {
-		strncpy(selmon->ltsymbol, selmon->lt[selmon->sellt]->symbol, sizeof selmon->ltsymbol);
-	} else {
-		strncpy(selmon->ltsymbol, selmon->lt[selmon->sellt]->symbolrev, sizeof selmon->ltsymbol);
-	}
+	const char *symbol = selmon->spawnmaster ? selmon->lt[selmon->sellt]->symbol : selmon->lt[selmon->sellt]->symbolrev;
+	strncpy(selmon->ltsymbol, symbol, sizeof selmon->ltsymbol);
 	if (selmon->sel)
 		arrange(selmon);
 	else
@@ -1648,6 +1655,9 @@ setup(void)
 
 	/* clean up any zombies (inherited from .xinitrc etc) immediately */
 	while (waitpid(-1, NULL, WNOHANG) > 0);
+
+	signal(SIGHUP, sighup);
+	signal(SIGTERM, sigterm);
 
 	/* init screen */
 	screen = DefaultScreen(dpy);
@@ -1751,6 +1761,20 @@ solitary(Client *c)
 }
 
 void
+sighup(int unused)
+{
+	Arg a = {.i = 1};
+	quit(&a);
+}
+
+void
+sigterm(int unused)
+{
+	Arg a = {.i = 0};
+	quit(&a);
+}
+
+void
 spawn(const Arg *arg)
 {
 	struct sigaction sa;
@@ -1823,8 +1847,8 @@ togglefloating(const Arg *arg)
 void
 togglefullscr(const Arg *arg)
 {
-  if(selmon->sel)
-    setfullscreen(selmon->sel, !selmon->sel->isfullscreen);
+	if(selmon->sel)
+		setfullscreen(selmon->sel, !selmon->sel->isfullscreen);
 }
 
 void
@@ -1945,7 +1969,7 @@ updatebarpos(Monitor *m)
 }
 
 void
-updateclientlist()
+updateclientlist(void)
 {
 	Client *c;
 	Monitor *m;
@@ -2228,7 +2252,7 @@ xerrorstart(Display *dpy, XErrorEvent *ee)
 }
 
 void
-xinitvisual()
+xinitvisual(void)
 {
     XVisualInfo *infos;
 	XRenderPictFormat *fmt;
@@ -2295,6 +2319,7 @@ main(int argc, char *argv[])
 #endif /* __OpenBSD__ */
 	scan();
 	run();
+	if(restart) execvp(argv[0], argv);
 	cleanup();
 	XCloseDisplay(dpy);
 	return EXIT_SUCCESS;
