@@ -1811,7 +1811,19 @@ tagmon(const Arg *arg)
 {
 	if (!selmon->sel || !mons->next)
 		return;
-	sendmon(selmon->sel, dirtomon(arg->i));
+
+	int restore_fullscreen = 0;
+	Client *window = selmon->sel;
+
+	if (window->isfullscreen) {
+		setfullscreen(window, 0);
+		restore_fullscreen = 1;
+	}
+
+	sendmon(window, dirtomon(arg->i));
+
+	if (restore_fullscreen)
+		setfullscreen(window, 1);
 }
 
 void

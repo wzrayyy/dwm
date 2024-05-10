@@ -42,4 +42,7 @@ uninstall:
 	rm -f ${DESTDIR}${PREFIX}/bin/dwm\
 		${DESTDIR}${MANPREFIX}/man1/dwm.1
 
+echo:
+	echo "${OBJ}"
+
 .PHONY: all clean dist install uninstall

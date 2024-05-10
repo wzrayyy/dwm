@@ -37,9 +37,9 @@ static const Rule rules[] = {
 	 *	WM_CLASS(STRING) = instance, class
 	 *	WM_NAME(STRING) = title
 	 */
-	/* class       instance  name                  tags mask  isfloating  monitor */
-	{ "Firefox",   NULL,     "Picture-in-Picture", 0,         1,          -1 },
-	{ "copyq",     "copyq",  NULL,	               0,         1,          -1 },
+	/* class		 instance  name			 tags mask  isfloating  monitor */
+	{ "Firefox",		 NULL,     "Picture-in-Picture", 0,         1,          -1 },
+	{ "copyq",     		 "copyq",  NULL,	         0,         1,          -1 },
 };
 
 
@@ -114,6 +114,7 @@ static const Key keys[] = {
 	{ MODKEY,             XK_o,      spawn,          SHCMD("dunstctl", "close") },
 	{ MODKEY|ShiftMask,   XK_i,      spawn,          SHCMD("dunstctl", "set-paused", "false") },
 	{ MODKEY|ShiftMask,   XK_o,      spawn,          SHCMD("dunstctl", "set-paused", "true") },
+	{ MODKEY|ShiftMask,   XK_r,      spawn,          SHCMD("xr") },
 	{ MODKEY,             XK_x,      spawn,          SHCMD("discord") },
 
 	// tags
@@ -127,7 +128,6 @@ static const Key keys[] = {
 	TAGKEYS(              XK_8,                      7)
 	TAGKEYS(              XK_9,                      8)
 	{ MODKEY|ShiftMask,   XK_q,      quit,           {0} },
-	{ MODKEY|ShiftMask,   XK_r,      quit,           {1} },
 	{ MODKEY,             XK_h,      focusmon,       {.i = -1 } },
 	{ MODKEY,             XK_l,      focusmon,       {.i = +1 } },
 	{ MODKEY|ControlMask, XK_h,      tagmon,         {.i = -1 } },
@@ -139,17 +139,18 @@ static const Key keys[] = {
 /* button definitions */
 /* click can be ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle, ClkClientWin, or ClkRootWin */
 static const Button buttons[] = {
-	/* click              event mask      button          function        argument */
-	{ ClkLtSymbol,        0,              Button1,        setlayout,      {0} },
-	{ ClkLtSymbol,        0,              Button3,        setlayout,      {.v = &layouts[2]} },
-	{ ClkWinTitle,        0,              Button2,        zoom,           {0} },
-	{ ClkStatusText,      0,              Button2,        spawn,          {.v = termcmd } },
-	{ ClkClientWin,       MODKEY,         Button1,        movemouse,      {0} },
-	{ ClkClientWin,       MODKEY,         Button2,        togglefloating, {0} },
-	{ ClkClientWin,       MODKEY,         Button3,        resizemouse,    {0} },
-	{ ClkTagBar,          0,              Button1,        view,           {0} },
-	{ ClkTagBar,          0,              Button3,        toggleview,     {0} },
-	{ ClkTagBar,          MODKEY,         Button1,        tag,            {0} },
-	{ ClkTagBar,          MODKEY,         Button3,        toggletag,      {0} },
+	/* click              event mask        button          function        argument */
+	{ ClkLtSymbol,        0,                  Button1,        setlayout,      {0} },
+	{ ClkLtSymbol,        0,                  Button3,        setlayout,      {.v = &layouts[2]} },
+	{ ClkWinTitle,        0,                  Button2,        zoom,           {0} },
+	{ ClkStatusText,      0,                  Button2,        spawn,          {.v = termcmd } },
+	{ ClkClientWin,       MODKEY,             Button1,        movemouse,      {0} },
+	{ ClkClientWin,       MODKEY,             Button2,        togglefloating, {0} },
+	{ ClkClientWin,       MODKEY,             Button3,        resizemouse,    {0} },
+	{ ClkClientWin,       MODKEY|ControlMask, Button1,        resizemouse,    {0} },
+	{ ClkTagBar,          0,                  Button1,        view,           {0} },
+	{ ClkTagBar,          0,                  Button3,        toggleview,     {0} },
+	{ ClkTagBar,          MODKEY,             Button1,        tag,            {0} },
+	{ ClkTagBar,          MODKEY,             Button3,        toggletag,      {0} },
 };
 
