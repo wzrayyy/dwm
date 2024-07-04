@@ -34,3 +34,15 @@ ecalloc(size_t nmemb, size_t size)
 		die("calloc:");
 	return p;
 }
+
+void
+notify(const char *fmt, ...) {
+	va_list ap;
+	char cmd[1024] = "notify-send  ";
+
+	va_start(ap, fmt);
+	sprintf(cmd+12, fmt, ap);
+	va_end(ap);
+
+	system(cmd);
+}
