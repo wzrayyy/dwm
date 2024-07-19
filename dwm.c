@@ -918,7 +918,6 @@ focus(Client *c)
 		}
 		setfocus(c);
 	} else {
-		notify("SELMON STACK EMPTY");
 		XSetInputFocus(dpy, root, RevertToNone, CurrentTime);
 		XDeleteProperty(dpy, root, netatom[NetActiveWindow]);
 	}
@@ -1307,8 +1306,10 @@ movemouse(const Arg *arg)
 
 	if (!(c = selmon->sel))
 		return;
-	if (c->isfullscreen) /* no support moving fullscreen windows by mouse */
-		return;
+
+	if (c->isfullscreen)
+		setfullscreen(selmon->sel, !selmon->sel->isfullscreen);
+
 	restack(selmon);
 	ocx = c->x;
 	ocy = c->y;

@@ -36,12 +36,14 @@ ecalloc(size_t nmemb, size_t size)
 }
 
 void
-notify(const char *fmt, ...) {
+notify(const char *fmt, ...)
+{
 	va_list ap;
-	char cmd[1024] = "notify-send  ";
+	char cmd[1024] = "nt() { notify-send \"$*\"; }; nt  ";
+	int cmd_size = strlen(cmd)-1;
 
 	va_start(ap, fmt);
-	sprintf(cmd+12, fmt, ap);
+	snprintf(cmd+cmd_size, 1024-cmd_size, fmt, ap);
 	va_end(ap);
 
 	system(cmd);

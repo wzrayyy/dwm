@@ -1,4 +1,5 @@
 /* appearance */
+#include <X11/X.h>
 static const unsigned int borderpx	  = 2;
 static const unsigned int snap        	  = 0;
 static const unsigned int swallowfloating = 0;
@@ -147,18 +148,17 @@ static const Key keys[] = {
 /* button definitions */
 /* click can be ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle, ClkClientWin, or ClkRootWin */
 static const Button buttons[] = {
-	/* click              event mask        button          function        argument */
-	{ ClkLtSymbol,        0,                  Button1,        setlayout,      {0} },
-	{ ClkLtSymbol,        0,                  Button3,        setlayout,      {.v = &layouts[2]} },
-	{ ClkWinTitle,        0,                  Button2,        zoom,           {0} },
-	{ ClkStatusText,      0,                  Button2,        spawn,          {.v = termcmd } },
-	{ ClkClientWin,       MODKEY,             Button1,        movemouse,      {0} },
-	{ ClkClientWin,       MODKEY,             Button2,        togglefloating, {0} },
-	{ ClkClientWin,       MODKEY,             Button3,        resizemouse,    {0} },
-	{ ClkClientWin,       MODKEY|ControlMask, Button1,        resizemouse,    {0} },
-	{ ClkTagBar,          0,                  Button1,        view,           {0} },
-	{ ClkTagBar,          0,                  Button3,        toggleview,     {0} },
-	{ ClkTagBar,          MODKEY,             Button1,        tag,            {0} },
-	{ ClkTagBar,          MODKEY,             Button3,        toggletag,      {0} },
-};
+	/* click              event mask	      button          function        argument */
+	{ ClkClientWin,       MODKEY,                 Button1,        movemouse,      {0} },
+	{ ClkClientWin,       MODKEY,                 Button2,        togglefloating, {0} },
+	{ ClkClientWin,       MODKEY,                 Button3,        resizemouse,    {0} },
+	{ ClkClientWin,       MODKEY|ControlMask,     Button1,        resizemouse,    {0} },
+	{ ClkTagBar,          0,                      Button3,        toggleview,     {0} },
+	{ ClkTagBar,          MODKEY,                 Button3,        toggletag,      {0} },
 
+	{ ClkTagBar,          0,                      Button1,	      view,           {0} },
+	{ ClkTagBar,          ShiftMask,              Button1,        tagview,        {0} },
+	{ ClkTagBar,          ControlMask,            Button1,        tag,            {0} },
+	{ ClkTagBar,          Mod1Mask,		      Button1,        toggletag,      {0} },
+	{ ClkTagBar,          ControlMask|ShiftMask,  Button1,        toggleview,     {0} },
+};
