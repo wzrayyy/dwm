@@ -43,7 +43,7 @@ notify(const char *fmt, ...)
 	int cmd_size = strlen(cmd)-1;
 
 	va_start(ap, fmt);
-	snprintf(cmd+cmd_size, 1024-cmd_size, fmt, ap);
+	vsnprintf(cmd+cmd_size, 1024-cmd_size, fmt, ap);
 	va_end(ap);
 
 	system(cmd);
