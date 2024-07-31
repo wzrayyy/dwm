@@ -1,5 +1,6 @@
 /* appearance */
 #include <X11/X.h>
+#include <X11/Xutil.h>
 static const unsigned int borderpx	  = 2;
 static const unsigned int snap        	  = 0;
 static const unsigned int swallowfloating = 0;
@@ -34,6 +35,8 @@ static const unsigned int alphas[][3] = {
 
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+static const char *metaworkspaces[] = { "1", "2", "3", "4" };
+
 static const Rule rules[] = {
 	/* xprop(1):
 	 *	WM_CLASS(STRING) = instance, class
@@ -86,79 +89,96 @@ static const char *termcmd[]  = { "alacritty", NULL };
 static const Key keys[] = {
 	/* modifier           key        function        argument */
 	// movement
-	{ MODKEY,				XK_d,      spawn,		{.v = dmenucmd } },
-	{ MODKEY,				XK_Return, spawn,          	{.v = termcmd } },
-	{ MODKEY,             			XK_b,      togglebar,      	{0} },
-	{ MODKEY,             			XK_j,      focusstack,     	{.i = +1 } },
-	{ MODKEY,             			XK_k,      focusstack,     	{.i = -1 } },
 	// { MODKEY|ShiftMask,   XK_l,      incnmaster,     {.i = +1 } },
 	// { MODKEY|ShiftMask,   XK_h,      incnmaster,     {.i = -1 } },
-	{ MODKEY,				XK_n,      setmfact,       	{.f = -0.05} },
-	{ MODKEY,		             	XK_m,      setmfact,       	{.f = +0.05} },
-	{ MODKEY,		             	XK_c,      zoom,           	{0} },
-	{ MODKEY,		             	XK_Tab,    view,           	{0} },
-	{ MODKEY,		             	XK_q,      killclient,     	{0} },
+	{ MODKEY,			XK_d,		spawn,		{.v = dmenucmd } },
+	{ MODKEY,			XK_Return, 	spawn,          	{.v = termcmd } },
+	{ MODKEY,             		XK_b,      	togglebar,      	{0} },
+	{ MODKEY,             		XK_j,      	focusstack,     	{.i = +1 } },
+	{ MODKEY,             		XK_k,      	focusstack,     	{.i = -1 } },
+	{ MODKEY,			XK_n,      	setmfact,       	{.f = -0.05} },
+	{ MODKEY,		        XK_m,      	setmfact,       	{.f = +0.05} },
+	{ MODKEY,		        XK_c,      	zoom,           	{0} },
+	{ MODKEY,		        XK_Tab,    	view,           	{0} },
+	{ MODKEY,		        XK_q,      	killclient,     	{0} },
 
 	// layout
-	{ MODKEY,		             	XK_u,      setlayout,      	{.v = &layouts[0]} },
-	{ MODKEY,		             	XK_y,      setlayout,      	{.v = &layouts[1]} },
-	{ MODKEY|ControlMask,		 	XK_m,      setlayout,      	{.v = &layouts[2]} },
-	{ MODKEY|ControlMask|ShiftMask, 	XK_m,      setlayout,      	{.v = &layouts[3]} },
-	{ MODKEY,		             	XK_f,      togglefullscr,  	{0} },
-	{ MODKEY|ShiftMask,			XK_f,      togglefloating,	{0} },
-	{ MODKEY|ShiftMask,   			XK_j,      movestack,      	{.i = +1 } },
-	{ MODKEY|ShiftMask,   			XK_k,      movestack,      	{.i = -1 } },
-	{ MODKEY,             			XK_0,      view,           	{.ui = ~0 } },
-	{ MODKEY|ControlMask, 			XK_0,      tag,            	{.ui = ~0 } },
-	{ MODKEY,             			XK_p,      invertdir,      	{0} },
+	{ MODKEY,		        XK_u,      	setlayout,      	{.v = &layouts[0]} },
+	{ MODKEY,		        XK_y,      	setlayout,      	{.v = &layouts[1]} },
+	{ MODKEY|ControlMask,		XK_m,      	setlayout,      	{.v = &layouts[2]} },
+	{ MODKEY|ControlMask|ShiftMask, XK_m,      	setlayout,      	{.v = &layouts[3]} },
+	{ MODKEY,		        XK_f,      	togglefullscr,  	{0} },
+	{ MODKEY|ShiftMask,		XK_f,      	togglefloating,	{0} },
+	{ MODKEY|ShiftMask,   		XK_j,      	movestack,      	{.i = +1 } },
+	{ MODKEY|ShiftMask,   		XK_k,      	movestack,      	{.i = -1 } },
+	{ MODKEY,             		XK_0,      	view,           	{.ui = ~0 } },
+	{ MODKEY|ControlMask, 		XK_0,      	tag,            	{.ui = ~0 } },
+	{ MODKEY,             		XK_p,      	invertdir,      	{0} },
+
+	// metaws
+	{ MODKEY,             		XK_Page_Up,	traversemetaws,      	{.i = +1} },
+	{ MODKEY,             		XK_Page_Down,	traversemetaws,      	{.i = -1} },
+	{ MODKEY|Mod1Mask,		XK_h,		viewmetaws,      	{.ui = 0} },
+	{ MODKEY|Mod1Mask,		XK_j,		viewmetaws,      	{.ui = 1} },
+	{ MODKEY|Mod1Mask,		XK_k,		viewmetaws,      	{.ui = 2} },
+	{ MODKEY|Mod1Mask,		XK_l,		viewmetaws,      	{.ui = 3} },
+
+	{ MODKEY|Mod1Mask|ControlMask,	XK_h,		tagmetaws,      	{.i = 0} },
+	{ MODKEY|Mod1Mask|ControlMask,	XK_j,		tagmetaws,      	{.i = 1} },
+	{ MODKEY|Mod1Mask|ControlMask,	XK_k,		tagmetaws,      	{.i = 2} },
+	{ MODKEY|Mod1Mask|ControlMask,	XK_l,		tagmetaws,      	{.i = 3} },
+	{ MODKEY|Mod1Mask|ControlMask,	XK_m,		tagmetaws,      	{.i = -1} },
 
 	// apps
-	{ MODKEY,             			XK_w,      spawn,          	SHCMD("firefox") },
-	{ MODKEY|ShiftMask,    			XK_p,      spawn,          	SHCMD("cast") },
-	{ MODKEY,             			XK_t,      spawn,          	SHCMD("ayugram-desktop") },
-	{ MODKEY|ShiftMask,   			XK_s,      spawn,          	SHCMD("flameshot", "gui") },
-	{ MODKEY,             			XK_i,      spawn,          	SHCMD("dunstctl", "history-pop") },
-	{ MODKEY,             			XK_o,      spawn,          	SHCMD("dunstctl", "close") },
-	{ MODKEY|ShiftMask,   			XK_i,      spawn,          	SHCMD("dunstctl", "set-paused", "false") },
-	{ MODKEY|ShiftMask,   			XK_o,      spawn,          	SHCMD("dunstctl", "set-paused", "true") },
-	{ MODKEY|ShiftMask,   			XK_r,      spawn,          	SHCMD("xr") },
-	{ MODKEY,             			XK_x,      spawn,          	SHCMD("vesktop") },
-	{ MODKEY,             			XK_v,      spawn,          	SHCMD("vpn", "-d", "--visual") },
-	{ MODKEY|ShiftMask,   			XK_v,      spawn,          	SHCMD("vpn", "--visual") },
+	{ MODKEY,             		XK_w,		spawn,          	SHCMD("firefox") },
+	{ MODKEY|ShiftMask,    		XK_p,      	spawn,          	SHCMD("cast") },
+	{ MODKEY,             		XK_t,      	spawn,          	SHCMD("ayugram-desktop") },
+	{ MODKEY|ShiftMask,   		XK_s,      	spawn,          	SHCMD("flameshot", "gui") },
+	{ MODKEY,             		XK_i,      	spawn,          	SHCMD("dunstctl", "history-pop") },
+	{ MODKEY,             		XK_o,      	spawn,          	SHCMD("dunstctl", "close") },
+	{ MODKEY|ShiftMask,   		XK_i,      	spawn,          	SHCMD("dunstctl", "set-paused", "false") },
+	{ MODKEY|ShiftMask,   		XK_o,      	spawn,          	SHCMD("dunstctl", "set-paused", "true") },
+	{ MODKEY|ShiftMask,   		XK_r,      	spawn,          	SHCMD("xr") },
+	{ MODKEY,             		XK_x,      	spawn,          	SHCMD("vesktop") },
+	{ MODKEY,             		XK_v,      	spawn,          	SHCMD("vpn", "-d", "--visual") },
+	{ MODKEY|ShiftMask,   		XK_v,      	spawn,          	SHCMD("vpn", "--visual") },
 
 	// tags
-	TAGKEYS(              			XK_1,                      	0)
-	TAGKEYS(              			XK_2,                      	1)
-	TAGKEYS(              			XK_3,                      	2)
-	TAGKEYS(              			XK_4,                      	3)
-	TAGKEYS(              			XK_5,                      	4)
-	TAGKEYS(              			XK_6,                      	5)
-	TAGKEYS(              			XK_7,                      	6)
-	TAGKEYS(              			XK_8,                      	7)
-	TAGKEYS(              			XK_9,                      	8)
-	{ MODKEY|ShiftMask,   			XK_q,      quit,           	{0} },
-	{ MODKEY,             			XK_h,      focusmon,       	{.i = -1 } },
-	{ MODKEY,             			XK_l,      focusmon,       	{.i = +1 } },
-	{ MODKEY|ControlMask, 			XK_h,      tagmon,         	{.i = -1 } },
-	{ MODKEY|ControlMask, 			XK_l,      tagmon,         	{.i = +1 } },
-	{ MODKEY|ShiftMask,   			XK_h,      focustagmon,    	{.i = -1 } },
-	{ MODKEY|ShiftMask,   			XK_l,      focustagmon,    	{.i = +1 } },
+	TAGKEYS(              		XK_1,		                	0)
+	TAGKEYS(              		XK_2,      	                	1)
+	TAGKEYS(              		XK_3,      	                	2)
+	TAGKEYS(              		XK_4,      	                	3)
+	TAGKEYS(              		XK_5,      	                	4)
+	TAGKEYS(              		XK_6,      	                	5)
+	TAGKEYS(              		XK_7,      	                	6)
+	TAGKEYS(              		XK_8,      	                	7)
+	TAGKEYS(              		XK_9,      	                	8)
+	{ MODKEY|ShiftMask,   		XK_q,      	quit,           	{0} },
+	{ MODKEY,             		XK_h,      	focusmon,       	{.i = -1 } },
+	{ MODKEY,             		XK_l,      	focusmon,       	{.i = +1 } },
+	{ MODKEY|ControlMask, 		XK_h,      	tagmon,         	{.i = -1 } },
+	{ MODKEY|ControlMask, 		XK_l,      	tagmon,         	{.i = +1 } },
+	{ MODKEY|ShiftMask,   		XK_h,      	focustagmon,    	{.i = -1 } },
+	{ MODKEY|ShiftMask,   		XK_l,      	focustagmon,    	{.i = +1 } },
 };
 
 /* button definitions */
-/* click can be ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle, ClkClientWin, or ClkRootWin */
+/* click can be ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle, ClkClientWin, ClkRootWin, or ClkMetaWorkspace */
 static const Button buttons[] = {
-	/* click              event mask	      button          function        argument */
-	{ ClkClientWin,       MODKEY,                 Button1,        movemouse,      {0} },
-	{ ClkClientWin,       MODKEY,                 Button2,        togglefloating, {0} },
-	{ ClkClientWin,       MODKEY,                 Button3,        resizemouse,    {0} },
-	{ ClkClientWin,       MODKEY|ControlMask,     Button1,        resizemouse,    {0} },
-	{ ClkTagBar,          0,                      Button3,        toggleview,     {0} },
-	{ ClkTagBar,          MODKEY,                 Button3,        toggletag,      {0} },
+	/* click		event mask		button		function	argument */
+	{ ClkClientWin,		MODKEY,                 Button1,        movemouse,      {0} },
+	{ ClkClientWin,		MODKEY,                 Button2,        togglefloating, {0} },
+	{ ClkClientWin,		MODKEY,                 Button3,        resizemouse,    {0} },
+	{ ClkClientWin,		MODKEY|ControlMask,     Button1,        resizemouse,    {0} },
+	{ ClkTagBar,   		0,                      Button3,        toggleview,     {0} },
+	{ ClkTagBar,   		MODKEY,                 Button3,        toggletag,      {0} },
 
-	{ ClkTagBar,          0,                      Button1,	      view,           {0} },
-	{ ClkTagBar,          ShiftMask,              Button1,        tagview,        {0} },
-	{ ClkTagBar,          ControlMask,            Button1,        tag,            {0} },
-	{ ClkTagBar,          Mod1Mask,		      Button1,        toggletag,      {0} },
-	{ ClkTagBar,          ControlMask|ShiftMask,  Button1,        toggleview,     {0} },
+	{ ClkTagBar,		0,                      Button1,	view,           {0} },
+	{ ClkTagBar,		ShiftMask,              Button1,        tagview,        {0} },
+	{ ClkTagBar,		ControlMask,            Button1,        tag,            {0} },
+	{ ClkTagBar,		Mod1Mask,		Button1,        toggletag,      {0} },
+	{ ClkTagBar,		ControlMask|ShiftMask,  Button1,        toggleview,     {0} },
+
+	{ ClkMwSymbol,		0,			Button1,        traversemetaws, {.i = +1} },
+	{ ClkMwSymbol,		0,			Button3,        traversemetaws, {.i = -1} },
 };

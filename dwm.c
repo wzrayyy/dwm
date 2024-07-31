@@ -55,7 +55,7 @@
 #define CLEANMASK(mask)         (mask & ~(numlockmask|LockMask) & (ShiftMask|ControlMask|Mod1Mask|Mod2Mask|Mod3Mask|Mod4Mask|Mod5Mask))
 #define INTERSECT(x,y,w,h,m)    (MAX(0, MIN((x)+(w),(m)->wx+(m)->ww) - MAX((x),(m)->wx)) \
                                * MAX(0, MIN((y)+(h),(m)->wy+(m)->wh) - MAX((y),(m)->wy)))
-#define ISVISIBLE(C)            ((C->tags & C->mon->tagset[C->mon->seltags]))
+#define ISVISIBLE(C)            ((C->tags[metaws] & C->mon->tagset[C->mon->seltags]))
 #define LENGTH(X)               (sizeof X / sizeof X[0])
 #define MOUSEMASK               (BUTTONMASK|PointerMotionMask)
 #define WIDTH(X)                ((X)->w + 2 * (X)->bw)
@@ -72,7 +72,7 @@ enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
        NetWMWindowTypeDialog, NetClientList, NetLast }; /* EWMH atoms */
 enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms */
 enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
-       ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
+       ClkClientWin, ClkRootWin, ClkLast, ClkMwSymbol }; /* clicks */
 
 typedef union {
 	int i;
@@ -99,7 +99,7 @@ struct Client {
 	int oldx, oldy, oldw, oldh;
 	int basew, baseh, incw, inch, maxw, maxh, minw, minh, hintsvalid;
 	int bw, oldbw;
-	unsigned int tags;
+	unsigned int tags[32];
 	int isfixed, isfloating, isurgent, neverfocus, oldstate, isfullscreen, isterminal, noswallow;
 	pid_t pid;
 	Client *next;
@@ -232,6 +232,7 @@ static void sigterm(int unused);
 static int solitary(Client *c);
 static void spawn(const Arg *arg);
 static void tag(const Arg *arg);
+static void tagmetaws(const Arg *arg);
 static void tagview(const Arg *arg);
 static void tagmon(const Arg *arg);
 static void togglebar(const Arg *arg);
@@ -239,6 +240,7 @@ static void togglefloating(const Arg *arg);
 static void togglefullscr(const Arg *arg);
 static void toggletag(const Arg *arg);
 static void toggleview(const Arg *arg);
+static void traversemetaws(const Arg *arg);
 static void unfocus(Client *c, int setfocus);
 static void unmanage(Client *c, int destroyed);
 static void unmapnotify(XEvent *e);
@@ -253,6 +255,7 @@ static void updatetitle(Client *c);
 static void updatewindowtype(Client *c);
 static void updatewmhints(Client *c);
 static void view(const Arg *arg);
+static void viewmetaws(const Arg *arg);
 static Client *wintoclient(Window w);
 static Monitor *wintomon(Window w);
 static int xerror(Display *dpy, XErrorEvent *ee);
@@ -306,6 +309,8 @@ static int useargb = 0;
 static Visual *visual;
 static int depth;
 static Colormap cmap;
+static int metaws = 0;
+static char mwsymbol[128] = {0};
 
 static xcb_connection_t *xcon;
 
@@ -327,7 +332,7 @@ applyrules(Client *c)
 
 	/* rule matching */
 	c->isfloating = 0;
-	c->tags = 0;
+	c->tags[metaws] = 0;
 	XGetClassHint(dpy, c->win, &ch);
 	class    = ch.res_class ? ch.res_class : broken;
 	instance = ch.res_name  ? ch.res_name  : broken;
@@ -341,7 +346,7 @@ applyrules(Client *c)
 			c->isterminal = r->isterminal;
 			c->noswallow  = r->noswallow;
 			c->isfloating = r->isfloating;
-			c->tags |= r->tags;
+			c->tags[metaws] |= r->tags;
 			for (m = mons; m && m->num != r->monitor; m = m->next);
 			if (m)
 				c->mon = m;
@@ -351,7 +356,7 @@ applyrules(Client *c)
 		XFree(ch.res_class);
 	if (ch.res_name)
 		XFree(ch.res_name);
-	c->tags = c->tags & TAGMASK ? c->tags & TAGMASK : c->mon->tagset[c->mon->seltags];
+	c->tags[metaws] = c->tags[metaws] & TAGMASK ? c->tags[metaws] & TAGMASK : c->mon->tagset[c->mon->seltags];
 }
 
 int
@@ -534,11 +539,16 @@ buttonpress(XEvent *e)
 		focus(NULL);
 	}
 	if (ev->window == selmon->barwin) {
-		i = x = 0;
+		i = 0;
+		x = TEXTW(mwsymbol);
+
 		do
 			x += TEXTW(tags[i]);
 		while (ev->x >= x && ++i < LENGTH(tags));
-		if (i < LENGTH(tags)) {
+
+		if (ev->x < TEXTW(mwsymbol))
+			click = ClkMwSymbol;
+		else if (i < LENGTH(tags)) {
 			click = ClkTagBar;
 			arg.ui = 1 << i;
 		} else if (ev->x < x + TEXTW(selmon->ltsymbol))
@@ -555,7 +565,7 @@ buttonpress(XEvent *e)
 	}
 	for (i = 0; i < LENGTH(buttons); i++)
 		if (click == buttons[i].click && buttons[i].func && buttons[i].button == ev->button
-		&& CLEANMASK(buttons[i].mask) == CLEANMASK(ev->state))
+			&& CLEANMASK(buttons[i].mask) == CLEANMASK(ev->state))
 			buttons[i].func(click == ClkTagBar && buttons[i].arg.i == 0 ? &arg : &buttons[i].arg);
 }
 
@@ -808,7 +818,7 @@ dirtomon(int dir)
 void
 drawbar(Monitor *m)
 {
-	int x, w, tw = 0;
+	int w, x = 0, tw = 0;
 	int boxs = drw->fonts->h / 9;
 	int boxw = drw->fonts->h / 6 + 2;
 	unsigned int i, occ = 0, urg = 0;
@@ -818,31 +828,37 @@ drawbar(Monitor *m)
 		return;
 
 	/* draw status first so it can be overdrawn by tags later */
+	drw_setscheme(drw, scheme[SchemeNorm]);
 	if (m == selmon) { /* status is only drawn on selected monitor */
-		drw_setscheme(drw, scheme[SchemeNorm]);
 		tw = TEXTW(stext) - lrpad + 2; /* 2px right padding */
 		drw_text(drw, m->ww - tw, 0, tw, bh, 0, stext, 0);
 	}
 
 	for (c = m->clients; c; c = c->next) {
-		occ |= c->tags;
+		occ |= c->tags[metaws];
 		if (c->isurgent)
-			urg |= c->tags;
+			urg |= c->tags[metaws];
 	}
-	x = 0;
+
+	w = TEXTW(mwsymbol);
+	x = drw_text(drw, x, 0, w, bh, lrpad / 2, mwsymbol, 0);
+
 	for (i = 0; i < LENGTH(tags); i++) {
 		w = TEXTW(tags[i]);
 		drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeSel : SchemeNorm]);
 		drw_text(drw, x, 0, w, bh, lrpad / 2, tags[i], urg & 1 << i);
 		if (occ & 1 << i)
 			drw_rect(drw, x + boxs, boxs, boxw, boxw,
-				m == selmon && selmon->sel && selmon->sel->tags & 1 << i,
+				m == selmon && selmon->sel && selmon->sel->tags[metaws] & 1 << i,
 				urg & 1 << i);
 		x += w;
 	}
+
 	w = TEXTW(m->ltsymbol);
+
 	drw_setscheme(drw, scheme[SchemeNorm]);
 	x = drw_text(drw, x, 0, w, bh, lrpad / 2, m->ltsymbol, 0);
+
 
 	if ((w = m->ww - tw - x) > bh) {
 		if (m->sel) {
@@ -1187,7 +1203,7 @@ manage(Window w, XWindowAttributes *wa)
 	updatetitle(c);
 	if (XGetTransientForHint(dpy, w, &trans) && (t = wintoclient(trans))) {
 		c->mon = t->mon;
-		c->tags = t->tags;
+		c->tags[metaws] = t->tags[metaws];
 	} else {
 		c->mon = selmon;
 		applyrules(c);
@@ -1271,7 +1287,7 @@ monocle(Monitor *m)
 
 	for (c = m->clients; c; c = c->next)
 		if (ISVISIBLE(c))
-			n++;
+			++n;
 	if (n > 0) /* override layout symbol */
 		snprintf(m->ltsymbol, sizeof m->ltsymbol, "[%d]", n);
 	for (c = nexttiled(m->clients); c; c = nexttiled(c->next))
@@ -1591,7 +1607,7 @@ sendmon(Client *c, Monitor *m)
 	Client *pc = selmon->stack;
 
 	c->mon = m;
-	c->tags = m->tagset[m->seltags]; /* assign tags of target monitor */
+	c->tags[metaws] = m->tagset[m->seltags]; /* assign tags of target monitor */
 
 	if (m->spawnmaster)
 	    attach(c);
@@ -1783,6 +1799,7 @@ setup(void)
 	scheme = ecalloc(LENGTH(colors), sizeof(Clr *));
 	for (i = 0; i < LENGTH(colors); i++)
 		scheme[i] = drw_scm_create(drw, colors[i], alphas[i], 3);
+	snprintf(mwsymbol, LENGTH(mwsymbol), "[%s]", metaworkspaces[metaws]);
 	/* init bars */
 	updatebars();
 	updatestatus();
@@ -1890,10 +1907,32 @@ void
 tag(const Arg *arg)
 {
 	if (selmon->sel && arg->ui & TAGMASK) {
-		selmon->sel->tags = arg->ui & TAGMASK;
+		selmon->sel->tags[metaws] = arg->ui & TAGMASK;
 		focus(NULL);
 		arrange(selmon);
 	}
+}
+
+void
+tagmetaws(const Arg *arg)
+{
+	int i;
+	unsigned int ot;
+
+	if (!selmon->sel || arg->i >= (int)LENGTH(metaworkspaces))
+		return;
+
+	if (arg->i == -1)
+		for (i = 0; i < LENGTH(metaworkspaces); ++i)
+			selmon->sel->tags[i] = selmon->sel->tags[metaws];
+	else {
+		ot = selmon->sel->tags[metaws];
+		for (i = 0; i < LENGTH(metaworkspaces); ++i)
+			selmon->sel->tags[i] = 0;
+		selmon->sel->tags[arg->i] = ot;
+	}
+	focus(NULL);
+	arrange(selmon);
 }
 
 void
@@ -1963,9 +2002,9 @@ toggletag(const Arg *arg)
 
 	if (!selmon->sel)
 		return;
-	newtags = selmon->sel->tags ^ (arg->ui & TAGMASK);
+	newtags = selmon->sel->tags[metaws] ^ (arg->ui & TAGMASK);
 	if (newtags) {
-		selmon->sel->tags = newtags;
+		selmon->sel->tags[metaws] = newtags;
 		focus(NULL);
 		arrange(selmon);
 	}
@@ -1981,6 +2020,17 @@ toggleview(const Arg *arg)
 		focus(NULL);
 		arrange(selmon);
 	}
+}
+
+void
+traversemetaws(const Arg *arg)
+{
+	if (!arg->i) return;
+	metaws = (metaws + arg->i + (LENGTH(metaworkspaces))) % LENGTH(metaworkspaces);
+	snprintf(mwsymbol, LENGTH(mwsymbol), "[%s]", metaworkspaces[metaws]);
+	focus(NULL);
+	arrange(NULL);
+	drawbars();
 }
 
 void
@@ -2305,6 +2355,18 @@ view(const Arg *arg)
 		selmon->tagset[selmon->seltags] = arg->ui & TAGMASK;
 	focus(NULL);
 	arrange(selmon);
+}
+
+void
+viewmetaws(const Arg *arg)
+{
+	if (arg->ui < LENGTH(metaworkspaces)) {
+		metaws = arg->ui;
+		snprintf(mwsymbol, LENGTH(mwsymbol), "[%s]", metaworkspaces[metaws]);
+		focus(NULL);
+		arrange(NULL);
+		drawbars();
+	}
 }
 
 pid_t
