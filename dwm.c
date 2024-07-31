@@ -205,6 +205,7 @@ static void maprequest(XEvent *e);
 static void monocle(Monitor *m);
 static void motionnotify(XEvent *e);
 static void movemouse(const Arg *arg);
+static void movemetaws(const Arg *arg);
 static Client *nexttiled(Client *c);
 static void pop(Client *c);
 static void propertynotify(XEvent *e);
@@ -1312,6 +1313,13 @@ motionnotify(XEvent *e)
 }
 
 void
+movemetaws(const Arg *arg)
+{
+	const Arg a = {.i = (metaws + arg->i + LENGTH(metaworkspaces)) % LENGTH(metaworkspaces)};
+	tagmetaws(&a);
+}
+
+void
 movemouse(const Arg *arg)
 {
 	int x, y, ocx, ocy, nx, ny;
@@ -1931,6 +1939,7 @@ tagmetaws(const Arg *arg)
 			selmon->sel->tags[i] = 0;
 		selmon->sel->tags[arg->i] = ot;
 	}
+
 	focus(NULL);
 	arrange(selmon);
 }

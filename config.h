@@ -76,6 +76,7 @@ static const Layout layouts[] = {
 	{ MODKEY|ControlMask,           KEY,      tag,            {.ui = 1 << TAG} }, \
 	{ MODKEY|Mod1Mask,		KEY,      toggletag,      {.ui = 1 << TAG} }, \
 	{ MODKEY|ControlMask|ShiftMask, KEY,      toggleview,     {.ui = 1 << TAG} }, \
+	{ MODKEY|Mod1Mask|ControlMask,	KEY,	  tagmetaws,      {.i = TAG} },
 
 #define SHCMD(...) { .v = (const char*[]){ __VA_ARGS__, NULL } }
 
@@ -91,43 +92,34 @@ static const Key keys[] = {
 	// movement
 	// { MODKEY|ShiftMask,   XK_l,      incnmaster,     {.i = +1 } },
 	// { MODKEY|ShiftMask,   XK_h,      incnmaster,     {.i = -1 } },
-	{ MODKEY,			XK_d,		spawn,		{.v = dmenucmd } },
+	{ MODKEY,			XK_d,		spawn,			{.v = dmenucmd } },
 	{ MODKEY,			XK_Return, 	spawn,          	{.v = termcmd } },
-	{ MODKEY,             		XK_b,      	togglebar,      	{0} },
+	{ MODKEY|ShiftMask,   		XK_b,      	togglebar,      	{0} },
 	{ MODKEY,             		XK_j,      	focusstack,     	{.i = +1 } },
 	{ MODKEY,             		XK_k,      	focusstack,     	{.i = -1 } },
 	{ MODKEY,			XK_n,      	setmfact,       	{.f = -0.05} },
 	{ MODKEY,		        XK_m,      	setmfact,       	{.f = +0.05} },
 	{ MODKEY,		        XK_c,      	zoom,           	{0} },
-	{ MODKEY,		        XK_Tab,    	view,           	{0} },
 	{ MODKEY,		        XK_q,      	killclient,     	{0} },
 
 	// layout
-	{ MODKEY,		        XK_u,      	setlayout,      	{.v = &layouts[0]} },
-	{ MODKEY,		        XK_y,      	setlayout,      	{.v = &layouts[1]} },
+	{ MODKEY|ControlMask,	        XK_u,      	setlayout,      	{.v = &layouts[0]} },
+	{ MODKEY|ControlMask|ShiftMask, XK_u,      	setlayout,      	{.v = &layouts[1]} },
 	{ MODKEY|ControlMask,		XK_m,      	setlayout,      	{.v = &layouts[2]} },
 	{ MODKEY|ControlMask|ShiftMask, XK_m,      	setlayout,      	{.v = &layouts[3]} },
 	{ MODKEY,		        XK_f,      	togglefullscr,  	{0} },
-	{ MODKEY|ShiftMask,		XK_f,      	togglefloating,	{0} },
+	{ MODKEY|ShiftMask,		XK_f,      	togglefloating,		{0} },
 	{ MODKEY|ShiftMask,   		XK_j,      	movestack,      	{.i = +1 } },
 	{ MODKEY|ShiftMask,   		XK_k,      	movestack,      	{.i = -1 } },
 	{ MODKEY,             		XK_0,      	view,           	{.ui = ~0 } },
 	{ MODKEY|ControlMask, 		XK_0,      	tag,            	{.ui = ~0 } },
-	{ MODKEY,             		XK_p,      	invertdir,      	{0} },
+	{ MODKEY|ControlMask, 		XK_p,      	invertdir,      	{0} },
 
 	// metaws
-	{ MODKEY,             		XK_Page_Up,	traversemetaws,      	{.i = +1} },
-	{ MODKEY,             		XK_Page_Down,	traversemetaws,      	{.i = -1} },
-	{ MODKEY|Mod1Mask,		XK_h,		viewmetaws,      	{.ui = 0} },
-	{ MODKEY|Mod1Mask,		XK_j,		viewmetaws,      	{.ui = 1} },
-	{ MODKEY|Mod1Mask,		XK_k,		viewmetaws,      	{.ui = 2} },
-	{ MODKEY|Mod1Mask,		XK_l,		viewmetaws,      	{.ui = 3} },
-
-	{ MODKEY|Mod1Mask|ControlMask,	XK_h,		tagmetaws,      	{.i = 0} },
-	{ MODKEY|Mod1Mask|ControlMask,	XK_j,		tagmetaws,      	{.i = 1} },
-	{ MODKEY|Mod1Mask|ControlMask,	XK_k,		tagmetaws,      	{.i = 2} },
-	{ MODKEY|Mod1Mask|ControlMask,	XK_l,		tagmetaws,      	{.i = 3} },
-	{ MODKEY|Mod1Mask|ControlMask,	XK_m,		tagmetaws,      	{.i = -1} },
+	{ MODKEY,		 	XK_Tab,		traversemetaws,      	{.i = +1} },
+	{ MODKEY|ShiftMask,	 	XK_Tab,		traversemetaws,      	{.i = -1} },
+	{ MODKEY|Mod1Mask,		XK_i,		movemetaws,      	{.i = +1} },
+	{ MODKEY|Mod1Mask,		XK_u,		movemetaws,      	{.i = -1} },
 
 	// apps
 	{ MODKEY,             		XK_w,		spawn,          	SHCMD("firefox") },
@@ -136,11 +128,11 @@ static const Key keys[] = {
 	{ MODKEY|ShiftMask,   		XK_s,      	spawn,          	SHCMD("flameshot", "gui") },
 	{ MODKEY,             		XK_i,      	spawn,          	SHCMD("dunstctl", "history-pop") },
 	{ MODKEY,             		XK_o,      	spawn,          	SHCMD("dunstctl", "close") },
-	{ MODKEY|ShiftMask,   		XK_i,      	spawn,          	SHCMD("dunstctl", "set-paused", "false") },
-	{ MODKEY|ShiftMask,   		XK_o,      	spawn,          	SHCMD("dunstctl", "set-paused", "true") },
+	{ MODKEY|ControlMask,  		XK_i,      	spawn,          	SHCMD("dunstctl", "set-paused", "false") },
+	{ MODKEY|ControlMask,  		XK_o,      	spawn,          	SHCMD("dunstctl", "set-paused", "true") },
 	{ MODKEY|ShiftMask,   		XK_r,      	spawn,          	SHCMD("xr") },
 	{ MODKEY,             		XK_x,      	spawn,          	SHCMD("vesktop") },
-	{ MODKEY,             		XK_v,      	spawn,          	SHCMD("vpn", "-d", "--visual") },
+	{ MODKEY|ControlMask, 		XK_v,      	spawn,          	SHCMD("vpn", "-d", "--visual") },
 	{ MODKEY|ShiftMask,   		XK_v,      	spawn,          	SHCMD("vpn", "--visual") },
 
 	// tags
