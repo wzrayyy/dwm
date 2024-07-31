@@ -120,6 +120,7 @@ static const Key keys[] = {
 	{ MODKEY|ShiftMask,	 	XK_Tab,		traversemetaws,      	{.i = -1} },
 	{ MODKEY|Mod1Mask,		XK_i,		movemetaws,      	{.i = +1} },
 	{ MODKEY|Mod1Mask,		XK_u,		movemetaws,      	{.i = -1} },
+	{ MODKEY|Mod1Mask,		XK_m,		tagmetaws,      	{.i = -1} },
 
 	// apps
 	{ MODKEY,             		XK_w,		spawn,          	SHCMD("firefox") },
