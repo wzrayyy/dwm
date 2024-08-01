@@ -61,8 +61,9 @@
 #define WIDTH(X)                ((X)->w + 2 * (X)->bw)
 #define HEIGHT(X)               ((X)->h + 2 * (X)->bw)
 #define TAGMASK                 ((1 << LENGTH(tags)) - 1)
-#define TEXTW(X)                (drw_fontset_getwidth(drw, (X)) + lrpad)
-#define TEXTWN(X)               (drw_fontset_getwidth(drw, (X)) + lrpad+6)
+#define TEXTW(X)                (drw_fontset_getwidth(drw, (X)) + lrpad + (X[0] > 32 && X[0] < 127 ? 0 : 6))
+#define TEXTWN(X)               (TEXTW(X))
+// #define TEXTWN(X)               (TEXTW(X) + 0)
 #define OPAQUE                  0xffU
 
 /* enums */
@@ -553,7 +554,7 @@ buttonpress(XEvent *e)
 		do {
 			if (!(occ & 1 << i || m->tagset[m->seltags] & 1 << i))
 				continue;
-			x += (1 << i) & nerdfont_icons ? TEXTWN(tags[i]) : TEXTW(tags[i]);
+			x += TEXTW(tags[i]);
 		} while (ev->x >= x && ++i < LENGTH(tags));
 
 		if (ev->x < TEXTW(mwsymbol))
@@ -561,7 +562,7 @@ buttonpress(XEvent *e)
 		else if (i < LENGTH(tags)) {
 			click = ClkTagBar;
 			arg.ui = 1 << i;
-		} else if (ev->x < x + TEXTW(selmon->ltsymbol))
+		} else if (ev->x < x + TEXTW(selmon->ltsymbol) && draw_ltsymbol)
 			click = ClkLtSymbol;
 		else if (ev->x > selmon->ww - (int)TEXTW(stext))
 			click = ClkStatusText;
@@ -850,13 +851,14 @@ drawbar(Monitor *m)
 			urg |= c->tags[metaws];
 	}
 
+	drw_setscheme(drw, scheme[m == selmon ? SchemeSel : SchemeNorm]);
 	w = TEXTW(mwsymbol);
 	x = drw_text(drw, x, 0, w, bh, lrpad / 2, mwsymbol, 0);
 
 	for (i = 0; i < LENGTH(tags); i++) {
 		if(!(occ & 1 << i || m->tagset[m->seltags] & 1 << i))
 			continue;
-		w = (1 << i) & nerdfont_icons ? TEXTWN(tags[i]) : TEXTW(tags[i]);
+		w = TEXTW(tags[i]);
 		drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeSel : SchemeNorm]);
 		drw_text(drw, x, 0, w, bh, lrpad / 2, tags[i], urg & 1 << i);
 		if (occ & 1 << i && m == selmon &&
@@ -865,15 +867,16 @@ drawbar(Monitor *m)
 		x += w;
 	}
 
-	w = TEXTW(m->ltsymbol);
-
-	drw_setscheme(drw, scheme[SchemeNorm]);
-	x = drw_text(drw, x, 0, w, bh, lrpad / 2, m->ltsymbol, 0);
-
+	if (draw_ltsymbol) {
+		w = TEXTW(m->ltsymbol);
+		drw_setscheme(drw, scheme[SchemeNorm]);
+		x = drw_text(drw, x, 0, w, bh, lrpad / 2, m->ltsymbol, 0);
+	}
 
 	if ((w = m->ww - tw - x) > bh) {
 		if (m->sel) {
-			drw_setscheme(drw, scheme[m == selmon ? SchemeSel : SchemeNorm]);
+			drw_setscheme(drw, scheme[SchemeNorm]);
+			// drw_setscheme(drw, scheme[m == selmon ? SchemeSel : SchemeNorm]);
 			drw_text(drw, x, 0, w, bh, lrpad / 2, m->sel->name, 0);
 			if (m->sel->isfloating)
 				drw_rect(drw, x + boxs, boxs, boxw, boxw, m->sel->isfixed, 0);
@@ -1825,7 +1828,7 @@ setup(void)
 	scheme = ecalloc(LENGTH(colors), sizeof(Clr *));
 	for (i = 0; i < LENGTH(colors); i++)
 		scheme[i] = drw_scm_create(drw, colors[i], alphas[i], 3);
-	snprintf(mwsymbol, LENGTH(mwsymbol), "[%s]", metaworkspaces[metaws]);
+	snprintf(mwsymbol, LENGTH(mwsymbol), "%s", metaworkspaces[metaws]);
 	/* init bars */
 	updatebars();
 	updatestatus();
@@ -2072,7 +2075,7 @@ traversemetaws(const Arg *arg)
 {
 	if (!arg->i) return;
 	metaws = (metaws + arg->i + (LENGTH(metaworkspaces))) % LENGTH(metaworkspaces);
-	snprintf(mwsymbol, LENGTH(mwsymbol), "[%s]", metaworkspaces[metaws]);
+	snprintf(mwsymbol, LENGTH(mwsymbol), "%s", metaworkspaces[metaws]);
 	focus(NULL);
 	arrange(NULL);
 	drawbars();
@@ -2407,7 +2410,7 @@ viewmetaws(const Arg *arg)
 {
 	if (arg->ui < LENGTH(metaworkspaces)) {
 		metaws = arg->ui;
-		snprintf(mwsymbol, LENGTH(mwsymbol), "[%s]", metaworkspaces[metaws]);
+		snprintf(mwsymbol, LENGTH(mwsymbol), "%s", metaworkspaces[metaws]);
 		focus(NULL);
 		arrange(NULL);
 		drawbars();

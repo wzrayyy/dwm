@@ -14,7 +14,7 @@ static const int topbar                   = 1;
 static const char *fonts[]                = { "Mononoki Nerd Font:size=12", "Noto Color Emoji:size=11" };
 static const char dmenufont[]             = "Mononoki Nerd Font:size=12";
 static const char col_gray1[]             = "#3a3a3a";
-static const char col_gray2[]             = "#5c5c5c";
+static const char col_gray2[]             = "#4b4b4b";
 static const char col_gray3[]             = "#bbbbbb";
 static const char col_gray4[]             = "#eeeeee";
 static const char col_accent[]            = "#db8402";
@@ -22,9 +22,9 @@ static const unsigned int baralpha        = 0xd0;
 static const unsigned int borderalpha     = OPAQUE;
 
 static const char *colors[][3] = {
-	/*               fg         bg         border   */
-	[SchemeNorm] = { col_gray3, col_gray1, col_gray2 },
-	[SchemeSel]  = { col_gray4, col_gray2, col_accent  },
+	/*                 fg         bg         border   */
+	[SchemeNorm]   = { col_gray3, col_gray1, col_gray2  },
+	[SchemeSel]    = { col_gray4, col_gray2, col_accent },
 };
 
 static const unsigned int alphas[][3] = {
@@ -34,9 +34,8 @@ static const unsigned int alphas[][3] = {
 };
 
 /* tagging */
-static const unsigned int nerdfont_icons = (1 << 8) | (1 << 7);
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "", "" };
-static const char *metaworkspaces[] = { "1", "2", "3", "4" };
+static const char *metaworkspaces[] = { "", "", "", "" };
 
 static const Rule rules[] = {
 	/* xprop(1):
@@ -61,9 +60,10 @@ static const int spawnmaster = 0;
 #define FORCE_VSPLIT 1
 #include "vanitygaps.c"
 
+static const int draw_ltsymbol = 0;
 static const Layout layouts[] = {
 	/* symbol  reverse  function */
-	{ "[]=",   "=[]",   tile },
+	{ "",      "",      tile },
         { "[/]",   "[\\]",  dwindle},
 	{ "[M]",   "[M]",   monocle },
 	{ "><>",   "<><",   NULL },
