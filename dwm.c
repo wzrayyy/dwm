@@ -62,6 +62,7 @@
 #define HEIGHT(X)               ((X)->h + 2 * (X)->bw)
 #define TAGMASK                 ((1 << LENGTH(tags)) - 1)
 #define TEXTW(X)                (drw_fontset_getwidth(drw, (X)) + lrpad)
+#define TEXTWN(X)               (drw_fontset_getwidth(drw, (X)) + lrpad+6)
 #define OPAQUE                  0xffU
 
 /* enums */
@@ -552,7 +553,7 @@ buttonpress(XEvent *e)
 		do {
 			if (!(occ & 1 << i || m->tagset[m->seltags] & 1 << i))
 				continue;
-			x += TEXTW(tags[i]);
+			x += (1 << i) & nerdfont_icons ? TEXTWN(tags[i]) : TEXTW(tags[i]);
 		} while (ev->x >= x && ++i < LENGTH(tags));
 
 		if (ev->x < TEXTW(mwsymbol))
@@ -855,7 +856,7 @@ drawbar(Monitor *m)
 	for (i = 0; i < LENGTH(tags); i++) {
 		if(!(occ & 1 << i || m->tagset[m->seltags] & 1 << i))
 			continue;
-		w = TEXTW(tags[i]);
+		w = (1 << i) & nerdfont_icons ? TEXTWN(tags[i]) : TEXTW(tags[i]);
 		drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeSel : SchemeNorm]);
 		drw_text(drw, x, 0, w, bh, lrpad / 2, tags[i], urg & 1 << i);
 		if (occ & 1 << i && m == selmon &&

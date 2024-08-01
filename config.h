@@ -34,6 +34,7 @@ static const unsigned int alphas[][3] = {
 };
 
 /* tagging */
+static const unsigned int nerdfont_icons = (1 << 8) | (1 << 7);
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "", "" };
 static const char *metaworkspaces[] = { "1", "2", "3", "4" };
 
