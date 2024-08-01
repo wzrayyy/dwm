@@ -34,7 +34,7 @@ static const unsigned int alphas[][3] = {
 };
 
 /* tagging */
-static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "", "" };
 static const char *metaworkspaces[] = { "1", "2", "3", "4" };
 
 static const Rule rules[] = {
@@ -71,12 +71,13 @@ static const Layout layouts[] = {
 /* key definitions */
 #define MODKEY Mod4Mask
 #define TAGKEYS(KEY,TAG) \
-	{ MODKEY,                       KEY,      view,           {.ui = 1 << TAG} }, \
-	{ MODKEY|ShiftMask,             KEY,      tagview,        {.ui = 1 << TAG} }, \
-	{ MODKEY|ControlMask,           KEY,      tag,            {.ui = 1 << TAG} }, \
-	{ MODKEY|Mod1Mask,		KEY,      toggletag,      {.ui = 1 << TAG} }, \
-	{ MODKEY|ControlMask|ShiftMask, KEY,      toggleview,     {.ui = 1 << TAG} }, \
-	{ MODKEY|Mod1Mask|ControlMask,	KEY,	  tagmetaws,      {.i = TAG} },
+	{ MODKEY,					KEY,      view,           {.ui = 1 << TAG} }, \
+	{ MODKEY|ShiftMask,             		KEY,      tagview,        {.ui = 1 << TAG} }, \
+	{ MODKEY|ControlMask,           		KEY,      tag,            {.ui = 1 << TAG} }, \
+	{ MODKEY|Mod1Mask,				KEY,      toggletag,      {.ui = 1 << TAG} }, \
+	{ MODKEY|ControlMask|ShiftMask, 		KEY,      toggleview,     {.ui = 1 << TAG} }, \
+	{ MODKEY|Mod1Mask|ControlMask,			KEY,	  tagmetaws,      {.i = TAG} }, \
+	{ MODKEY|Mod1Mask|ShiftMask|ControlMask,	KEY,	  tagviewmetaws,  {.i = TAG} },
 
 #define SHCMD(...) { .v = (const char*[]){ __VA_ARGS__, NULL } }
 
@@ -116,11 +117,14 @@ static const Key keys[] = {
 	{ MODKEY|ControlMask, 		XK_p,      	invertdir,      	{0} },
 
 	// metaws
-	{ MODKEY,		 	XK_Tab,		traversemetaws,      	{.i = +1} },
-	{ MODKEY|ShiftMask,	 	XK_Tab,		traversemetaws,      	{.i = -1} },
-	{ MODKEY|Mod1Mask,		XK_i,		movemetaws,      	{.i = +1} },
-	{ MODKEY|Mod1Mask,		XK_u,		movemetaws,      	{.i = -1} },
+	{ MODKEY|Mod1Mask,	 	XK_i,		traversemetaws,      	{.i = +1} },
+	{ MODKEY|Mod1Mask,	 	XK_u,		traversemetaws,      	{.i = -1} },
 	{ MODKEY|Mod1Mask,		XK_m,		tagmetaws,      	{.i = -1} },
+	{ MODKEY|ControlMask|Mod1Mask,	XK_i,		moveviewmetaws,      	{.i = +1} },
+	{ MODKEY|ControlMask|Mod1Mask,	XK_u,		moveviewmetaws,      	{.i = -1} },
+
+	{ MODKEY|ShiftMask|ControlMask|Mod1Mask,	XK_i,		movemetaws,      	{.i = +1} },
+	{ MODKEY|ShiftMask|ControlMask|Mod1Mask,	XK_u,		movemetaws,      	{.i = -1} },
 
 	// apps
 	{ MODKEY,             		XK_w,		spawn,          	SHCMD("firefox") },

@@ -94,6 +94,7 @@ typedef struct Client Client;
 struct Client {
 	char name[256];
 	float mina, maxa;
+	int mwpin;
 	float cfact;
 	int x, y, w, h;
 	int oldx, oldy, oldw, oldh;
@@ -206,6 +207,7 @@ static void monocle(Monitor *m);
 static void motionnotify(XEvent *e);
 static void movemouse(const Arg *arg);
 static void movemetaws(const Arg *arg);
+static void moveviewmetaws(const Arg *arg);
 static Client *nexttiled(Client *c);
 static void pop(Client *c);
 static void propertynotify(XEvent *e);
@@ -234,6 +236,7 @@ static int solitary(Client *c);
 static void spawn(const Arg *arg);
 static void tag(const Arg *arg);
 static void tagmetaws(const Arg *arg);
+static void tagviewmetaws(const Arg *arg);
 static void tagview(const Arg *arg);
 static void tagmon(const Arg *arg);
 static void togglebar(const Arg *arg);
@@ -1320,6 +1323,14 @@ movemetaws(const Arg *arg)
 }
 
 void
+moveviewmetaws(const Arg *arg)
+{
+	const Arg a = {.i = (metaws + arg->i + LENGTH(metaworkspaces)) % LENGTH(metaworkspaces)};
+	tagmetaws(&a);
+	viewmetaws(&a);
+}
+
+void
 movemouse(const Arg *arg)
 {
 	int x, y, ocx, ocy, nx, ny;
@@ -1605,7 +1616,7 @@ scan(void)
 void
 sendmon(Client *c, Monitor *m)
 {
-	if (c->mon == m)
+	if (c->mon == m || c->mwpin)
 		return;
 
 	unfocus(c, 1);
@@ -1914,8 +1925,13 @@ spawn(const Arg *arg)
 void
 tag(const Arg *arg)
 {
-	if (selmon->sel && arg->ui & TAGMASK) {
-		selmon->sel->tags[metaws] = arg->ui & TAGMASK;
+	int i;
+	Client *c = selmon->sel;
+	if (c && arg->ui & TAGMASK) {
+		if (!c->mwpin)
+			c->tags[metaws] = arg->ui & TAGMASK;
+		else for(i = 0; i < LENGTH(metaworkspaces); ++i)
+			c->tags[i] = arg->ui & TAGMASK;
 		focus(NULL);
 		arrange(selmon);
 	}
@@ -1930,10 +1946,13 @@ tagmetaws(const Arg *arg)
 	if (!selmon->sel || arg->i >= (int)LENGTH(metaworkspaces))
 		return;
 
-	if (arg->i == -1)
+	if (arg->i == -1) {
+		selmon->sel->mwpin = 1;
 		for (i = 0; i < LENGTH(metaworkspaces); ++i)
 			selmon->sel->tags[i] = selmon->sel->tags[metaws];
+	}
 	else {
+		selmon->sel->mwpin = 0;
 		ot = selmon->sel->tags[metaws];
 		for (i = 0; i < LENGTH(metaworkspaces); ++i)
 			selmon->sel->tags[i] = 0;
@@ -1942,6 +1961,13 @@ tagmetaws(const Arg *arg)
 
 	focus(NULL);
 	arrange(selmon);
+}
+
+void
+tagviewmetaws(const Arg *arg)
+{
+	tagmetaws(arg);
+	viewmetaws(arg);
 }
 
 void
@@ -2007,13 +2033,16 @@ togglefullscr(const Arg *arg)
 void
 toggletag(const Arg *arg)
 {
-	unsigned int newtags;
+	unsigned int newtags, i;
 
 	if (!selmon->sel)
 		return;
 	newtags = selmon->sel->tags[metaws] ^ (arg->ui & TAGMASK);
 	if (newtags) {
-		selmon->sel->tags[metaws] = newtags;
+		if (!selmon->sel->mwpin)
+			selmon->sel->tags[metaws] = newtags;
+		else for(i = 0; i < LENGTH(metaworkspaces); ++i)
+			selmon->sel->tags[i] = newtags;
 		focus(NULL);
 		arrange(selmon);
 	}
