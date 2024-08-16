@@ -35,18 +35,20 @@ static const unsigned int alphas[][3] = {
 
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "", "" };
-static const char *metaworkspaces[] = { "", "", "", "" };
+static const char *metaworkspaces[] = { "", "", "", "󰢚" };
 
 static const Rule rules[] = {
 	/* xprop(1):
 	 *	WM_CLASS(STRING) = instance, class
 	 *	WM_NAME(STRING) = title
 	 */
-	/* class	instance  title			 tags_mask  isfloating  isterminal  noswallow monitor */
-	{ "Firefox",	NULL,	  "Picture-in-Picture",  0,         1,		0,	    1,	      -1 },
-	{ "copyq",     	NULL,     NULL,		         0,         1,          0,	    0,        -1 },
-	{ "Alacritty",	NULL,	  NULL,	                 0,         0,          1,	    0,        -1 },
-	{ "floating",	NULL, 	  NULL,	                 0,         1,          0,	    0,        -1 },
+	/* class		instance		title			tags_mask  isfloating	isterminal  noswallow monitor	mwpin*/
+	{ "Firefox",		NULL,	  		"Picture-in-Picture",	0,         1,		0,	    1,	      -1,	0 },
+	{ "copyq",     		NULL,     		NULL,		        0,         1,		0,	    0,        -1,	0 },
+	{ "Alacritty",		NULL,	  		NULL,	                0,         0,		1,	    0,        -1,	0 },
+	{ "floating",		NULL, 	  		NULL,	                0,         1,		0,	    0,        -1,	0 },
+	{ "Spotify",		"spotify",		NULL,	                128,       0,		0,	    0,        0,	1 },
+	{ "AyuGramDesktop",	"ayugram-desktop",	NULL,	                256,       0,		0,	    0,        0,	1 },
 };
 
 
@@ -140,6 +142,10 @@ static const Key keys[] = {
 	{ MODKEY,             		XK_x,      	spawn,          	SHCMD("vesktop") },
 	{ MODKEY|ControlMask, 		XK_v,      	spawn,          	SHCMD("vpn", "-d", "--visual") },
 	{ MODKEY|ShiftMask,   		XK_v,      	spawn,          	SHCMD("vpn", "--visual") },
+	{ MODKEY|ShiftMask,   		XK_Up,      	spawn,          	SHCMD("volume", "+1") },
+	{ MODKEY|ShiftMask,   		XK_Down,      	spawn,          	SHCMD("volume", "-1") },
+	{ MODKEY,	   		XK_Up,        	spawn,          	SHCMD("volume", "+5") },
+	{ MODKEY,	   		XK_Down,      	spawn,          	SHCMD("volume", "-5") },
 
 	// tags
 	TAGKEYS(              		XK_1,		                	0)

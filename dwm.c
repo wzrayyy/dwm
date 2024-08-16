@@ -55,7 +55,7 @@
 #define CLEANMASK(mask)         (mask & ~(numlockmask|LockMask) & (ShiftMask|ControlMask|Mod1Mask|Mod2Mask|Mod3Mask|Mod4Mask|Mod5Mask))
 #define INTERSECT(x,y,w,h,m)    (MAX(0, MIN((x)+(w),(m)->wx+(m)->ww) - MAX((x),(m)->wx)) \
                                * MAX(0, MIN((y)+(h),(m)->wy+(m)->wh) - MAX((y),(m)->wy)))
-#define ISVISIBLE(C)            ((C->tags[metaws] & C->mon->tagset[C->mon->seltags]))
+#define ISVISIBLE(C)            ((C->tags[metaws] & C->mon->tagset[metaws][C->mon->seltags[metaws]]))
 #define LENGTH(X)               (sizeof X / sizeof X[0])
 #define MOUSEMASK               (BUTTONMASK|PointerMotionMask)
 #define WIDTH(X)                ((X)->w + 2 * (X)->bw)
@@ -65,6 +65,7 @@
 #define TEXTWN(X)               (TEXTW(X))
 // #define TEXTWN(X)               (TEXTW(X) + 0)
 #define OPAQUE                  0xffU
+#define MAX_METAWS		32
 
 /* enums */
 enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
@@ -102,7 +103,7 @@ struct Client {
 	int oldx, oldy, oldw, oldh;
 	int basew, baseh, incw, inch, maxw, maxh, minw, minh, hintsvalid;
 	int bw, oldbw;
-	unsigned int tags[32];
+	unsigned int tags[MAX_METAWS];
 	int isfixed, isfloating, isurgent, neverfocus, oldstate, isfullscreen, isterminal, noswallow;
 	pid_t pid;
 	Client *next;
@@ -137,9 +138,9 @@ struct Monitor {
 	int gappiv;           /* vertical gap between windows */
 	int gappoh;           /* horizontal outer gaps */
 	int gappov;           /* vertical outer gaps */
-	unsigned int seltags;
+	unsigned int seltags[MAX_METAWS];
 	unsigned int sellt;
-	unsigned int tagset[2];
+	unsigned int tagset[MAX_METAWS][2];
 	int showbar;
 	int topbar;
 	int spawnmaster;
@@ -160,6 +161,7 @@ typedef struct {
 	int isterminal;
 	int noswallow;
 	int monitor;
+	int mwpin;
 } Rule;
 
 /* function declarations */
@@ -331,7 +333,7 @@ void
 applyrules(Client *c)
 {
 	const char *class, *instance;
-	unsigned int i;
+	unsigned int i, j;
 	const Rule *r;
 	Monitor *m;
 	XClassHint ch = { NULL, NULL };
@@ -352,17 +354,21 @@ applyrules(Client *c)
 			c->isterminal = r->isterminal;
 			c->noswallow  = r->noswallow;
 			c->isfloating = r->isfloating;
-			c->tags[metaws] |= r->tags;
+			if (!r->mwpin)
+				c->tags[metaws] |= r->tags;
+			else for (j = 0; j < LENGTH(metaworkspaces); ++j)
+				c->tags[j] |= r->tags;
 			for (m = mons; m && m->num != r->monitor; m = m->next);
 			if (m)
 				c->mon = m;
+			c->mwpin = r->mwpin;
 		}
 	}
 	if (ch.res_class)
 		XFree(ch.res_class);
 	if (ch.res_name)
 		XFree(ch.res_name);
-	c->tags[metaws] = c->tags[metaws] & TAGMASK ? c->tags[metaws] & TAGMASK : c->mon->tagset[c->mon->seltags];
+	c->tags[metaws] = c->tags[metaws] & TAGMASK ? c->tags[metaws] & TAGMASK : c->mon->tagset[metaws][c->mon->seltags[metaws]];
 }
 
 int
@@ -552,7 +558,7 @@ buttonpress(XEvent *e)
 		for(c = m->clients; c; c=c->next)
 			occ |= c->tags[metaws] == TAGMASK ? 0 : c->tags[metaws];
 		do {
-			if (!(occ & 1 << i || m->tagset[m->seltags] & 1 << i))
+			if (!(occ & 1 << i || m->tagset[metaws][m->seltags[metaws]] & 1 << i))
 				continue;
 			x += TEXTW(tags[i]);
 		} while (ev->x >= x && ++i < LENGTH(tags));
@@ -594,7 +600,7 @@ checkotherwm(void)
 void
 cleanup(void)
 {
-	Arg a = {.ui = ~0};
+	Arg a = {.ui = ~0u};
 	Layout foo = { "", NULL };
 	Monitor *m;
 	size_t i;
@@ -757,10 +763,14 @@ Monitor *
 createmon(void)
 {
 	Monitor *m;
+	unsigned int i;
 	const char *symbol = spawnmaster ? layouts[0].symbol : layouts[0].symbolrev;
 
-	m = ecalloc(1, sizeof(Monitor));
-	m->tagset[0] = m->tagset[1] = 1;
+	m = (Monitor *)ecalloc(1, sizeof(Monitor));
+	for (i = 0; i < LENGTH(metaworkspaces); ++i) {
+		m->tagset[i][0] = 1;
+		m->seltags[i] = 0;
+	}
 	m->mfact = mfact;
 	m->nmaster = nmaster;
 	m->showbar = showbar;
@@ -846,7 +856,7 @@ drawbar(Monitor *m)
 	}
 
 	for (c = m->clients; c; c = c->next) {
-		occ |= c->tags[metaws] == TAGMASK ? 0 : c->tags[metaws];
+		occ |= c->tags[metaws] == TAGMASK && c != selmon->sel ? 0 : c->tags[metaws];
 		if (c->isurgent)
 			urg |= c->tags[metaws];
 	}
@@ -856,34 +866,32 @@ drawbar(Monitor *m)
 	x = drw_text(drw, x, 0, w, bh, lrpad / 2, mwsymbol, 0);
 
 	for (i = 0; i < LENGTH(tags); i++) {
-		if(!(occ & 1 << i || m->tagset[m->seltags] & 1 << i))
+		if(!(occ & 1 << i || m->tagset[metaws][m->seltags[metaws]] & 1 << i))
 			continue;
 		w = TEXTW(tags[i]);
-		drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeSel : SchemeNorm]);
+		drw_setscheme(drw, scheme[m->tagset[metaws][m->seltags[metaws]] & 1 << i ? SchemeSel : SchemeNorm]);
 		drw_text(drw, x, 0, w, bh, lrpad / 2, tags[i], urg & 1 << i);
-		if (occ & 1 << i && m == selmon &&
-		    selmon->sel && selmon->sel->tags[metaws] & 1 << i)
+		if (m == selmon &&
+		    selmon->sel && selmon->sel->tags[metaws] & 1 << i &&
+		    selmon->sel->tags[metaws] & ~(1 << i))
 			drw_rect(drw, x + boxs, boxs, boxw, boxw, 1, urg & 1 << i);
 		x += w;
 	}
 
+	drw_setscheme(drw, scheme[SchemeNorm]);
+
 	if (draw_ltsymbol) {
 		w = TEXTW(m->ltsymbol);
-		drw_setscheme(drw, scheme[SchemeNorm]);
 		x = drw_text(drw, x, 0, w, bh, lrpad / 2, m->ltsymbol, 0);
 	}
 
 	if ((w = m->ww - tw - x) > bh) {
 		if (m->sel) {
-			drw_setscheme(drw, scheme[SchemeNorm]);
-			// drw_setscheme(drw, scheme[m == selmon ? SchemeSel : SchemeNorm]);
 			drw_text(drw, x, 0, w, bh, lrpad / 2, m->sel->name, 0);
 			if (m->sel->isfloating)
 				drw_rect(drw, x + boxs, boxs, boxw, boxw, m->sel->isfixed, 0);
-		} else {
-			drw_setscheme(drw, scheme[SchemeNorm]);
+		} else
 			drw_rect(drw, x, 0, w, bh, 1, 1);
-		}
 	}
 	drw_map(drw, m->barwin, 0, 0, m->ww, bh);
 }
@@ -1010,7 +1018,7 @@ focustagmon(const Arg *arg)
 {
 	Monitor *m = dirtomon(arg->i);
 	if (m && m->sel && m->sel->isfullscreen)
-		return;
+		setfullscreen(m->sel, 0);
 
 	tagmon(arg);
 	focusmon(arg);
@@ -1636,7 +1644,7 @@ sendmon(Client *c, Monitor *m)
 	Client *pc = selmon->stack;
 
 	c->mon = m;
-	c->tags[metaws] = m->tagset[m->seltags]; /* assign tags of target monitor */
+	c->tags[metaws] = m->tagset[metaws][m->seltags[metaws]]; /* assign tags of target monitor */
 
 	if (m->spawnmaster)
 	    attach(c);
@@ -1951,7 +1959,6 @@ void
 tagmetaws(const Arg *arg)
 {
 	int i;
-	unsigned int ot;
 
 	if (!selmon->sel || arg->i >= (int)LENGTH(metaworkspaces))
 		return;
@@ -1963,10 +1970,9 @@ tagmetaws(const Arg *arg)
 	}
 	else {
 		selmon->sel->mwpin = 0;
-		ot = selmon->sel->tags[metaws];
 		for (i = 0; i < LENGTH(metaworkspaces); ++i)
 			selmon->sel->tags[i] = 0;
-		selmon->sel->tags[arg->i] = ot;
+		selmon->sel->tags[arg->i] = selmon->tagset[arg->i][selmon->seltags[arg->i]];
 	}
 
 	focus(NULL);
@@ -2061,10 +2067,10 @@ toggletag(const Arg *arg)
 void
 toggleview(const Arg *arg)
 {
-	unsigned int newtagset = selmon->tagset[selmon->seltags] ^ (arg->ui & TAGMASK);
+	unsigned int newtagset = selmon->tagset[metaws][selmon->seltags[metaws]] ^ (arg->ui & TAGMASK);
 
 	if (newtagset) {
-		selmon->tagset[selmon->seltags] = newtagset;
+		selmon->tagset[metaws][selmon->seltags[metaws]] = newtagset;
 		focus(NULL);
 		arrange(selmon);
 	}
@@ -2396,11 +2402,11 @@ updatewmhints(Client *c)
 void
 view(const Arg *arg)
 {
-	if ((arg->ui & TAGMASK) == selmon->tagset[selmon->seltags])
+	if ((arg->ui & TAGMASK) == selmon->tagset[metaws][selmon->seltags[metaws]])
 		return;
-	selmon->seltags ^= 1; /* toggle sel tagset */
+	selmon->seltags[metaws] ^= 1; /* toggle sel tagset */
 	if (arg->ui & TAGMASK)
-		selmon->tagset[selmon->seltags] = arg->ui & TAGMASK;
+		selmon->tagset[metaws][selmon->seltags[metaws]] = arg->ui & TAGMASK;
 	focus(NULL);
 	arrange(selmon);
 }
