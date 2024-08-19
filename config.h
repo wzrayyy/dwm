@@ -11,13 +11,12 @@ static const unsigned int gappov          = 10;
 static int smartgaps                      = 1;
 static const int showbar                  = 1;
 static const int topbar                   = 1;
-static const char *fonts[]                = { "Mononoki Nerd Font:size=12", "Noto Color Emoji:size=11" };
-static const char dmenufont[]             = "Mononoki Nerd Font:size=12";
-static const char col_gray1[]             = "#3a3a3a";
-static const char col_gray2[]             = "#4b4b4b";
-static const char col_gray3[]             = "#bbbbbb";
-static const char col_gray4[]             = "#eeeeee";
-static const char col_accent[]            = "#db8402";
+static const char *fonts[]                = { "Mononoki Nerd Font Propo:size=12", "Noto Color Emoji:size=11" };
+static const char col_gray1[]             = "#232323";
+static const char col_gray2[]             = "#3a3a3a";
+static const char col_gray3[]             = "#a0a0a0";
+static const char col_gray4[]             = "#ffffff";
+static const char col_accent[]            = "#7a7a7a";
 static const unsigned int baralpha        = 0xd0;
 static const unsigned int borderalpha     = OPAQUE;
 
@@ -138,6 +137,8 @@ static const Key keys[] = {
 	{ MODKEY,             		XK_o,      	spawn,          	SHCMD("dunstctl", "close") },
 	{ MODKEY|ControlMask,  		XK_i,      	spawn,          	SHCMD("dunstctl", "set-paused", "false") },
 	{ MODKEY|ControlMask,  		XK_o,      	spawn,          	SHCMD("dunstctl", "set-paused", "true") },
+	{ MODKEY|ShiftMask,  		XK_i,      	spawn,          	SHCMD("dunstctl", "context") },
+	{ MODKEY|ShiftMask,  		XK_o,      	spawn,          	SHCMD("dunstctl", "action") },
 	{ MODKEY|ShiftMask,   		XK_r,      	spawn,          	SHCMD("xr") },
 	{ MODKEY,             		XK_x,      	spawn,          	SHCMD("vesktop") },
 	{ MODKEY,	 		XK_v,      	spawn,          	SHCMD("vpn", "msk") },
