@@ -72,20 +72,21 @@ static const Layout layouts[] = {
 
 /* key definitions */
 #define MODKEY Mod4Mask
+#define AltMask Mod1Mask
+
 #define TAGKEYS(KEY,TAG) \
 	{ MODKEY,					KEY,      view,           {.ui = 1 << TAG} }, \
 	{ MODKEY|ShiftMask,             		KEY,      tagview,        {.ui = 1 << TAG} }, \
 	{ MODKEY|ControlMask,           		KEY,      tag,            {.ui = 1 << TAG} }, \
-	{ MODKEY|Mod1Mask,				KEY,      toggletag,      {.ui = 1 << TAG} }, \
+	{ MODKEY|AltMask,				KEY,      toggletag,      {.ui = 1 << TAG} }, \
 	{ MODKEY|ControlMask|ShiftMask, 		KEY,      toggleview,     {.ui = 1 << TAG} }, \
-	{ MODKEY|Mod1Mask|ControlMask,			KEY,	  tagmetaws,      {.i = TAG} }, \
-	{ MODKEY|Mod1Mask|ShiftMask|ControlMask,	KEY,	  tagviewmetaws,  {.i = TAG} },
+	{ AltMask,					KEY,      viewmetaws,     {.ui = TAG} }, \
+	{ AltMask|ShiftMask,             		KEY,      tagviewmetaws,  {.ui = TAG} }, \
+	{ AltMask|ControlMask,           		KEY,      tagmetaws,      {.ui = TAG} }, \
 
 #define SHCMD(...) { .v = (const char*[]){ __VA_ARGS__, NULL } }
 
 /* commands */
-static char dmenumon[2] = "0";
-// static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_accent, "-sf", col_gray4, NULL };
 static const char *dmenucmd[] = { "dmenu_run", NULL };
 static const char *termcmd[]  = { "alacritty", NULL };
 
@@ -118,32 +119,26 @@ static const Key keys[] = {
 	{ MODKEY|ControlMask, 		XK_0,      	tag,            	{.ui = ~0 } },
 	{ MODKEY|ControlMask, 		XK_p,      	invertdir,      	{0} },
 
-	// metaws
-	{ MODKEY|Mod1Mask,	 	XK_i,		traversemetaws,      	{.i = +1} },
-	{ MODKEY|Mod1Mask,	 	XK_u,		traversemetaws,      	{.i = -1} },
-	{ MODKEY|Mod1Mask,		XK_m,		tagmetaws,      	{.i = -1} },
-	{ MODKEY|ControlMask|Mod1Mask,	XK_i,		moveviewmetaws,      	{.i = +1} },
-	{ MODKEY|ControlMask|Mod1Mask,	XK_u,		moveviewmetaws,      	{.i = -1} },
-
-	{ MODKEY|ShiftMask|ControlMask|Mod1Mask,	XK_i,		movemetaws,      	{.i = +1} },
-	{ MODKEY|ShiftMask|ControlMask|Mod1Mask,	XK_u,		movemetaws,      	{.i = -1} },
-
 	// apps
 	{ MODKEY,             		XK_w,		spawn,          	SHCMD("firefox") },
-	{ MODKEY|ShiftMask,    		XK_p,      	spawn,          	SHCMD("cast") },
 	{ MODKEY,             		XK_t,      	spawn,          	SHCMD("ayugram-desktop") },
 	{ MODKEY|ShiftMask,   		XK_s,      	spawn,          	SHCMD("flameshot", "gui") },
+	{ MODKEY|ShiftMask,   		XK_r,      	spawn,          	SHCMD("xr") },
+
+	// dunst
 	{ MODKEY,             		XK_i,      	spawn,          	SHCMD("dunstctl", "history-pop") },
 	{ MODKEY,             		XK_o,      	spawn,          	SHCMD("dunstctl", "close") },
 	{ MODKEY|ControlMask,  		XK_i,      	spawn,          	SHCMD("dunstctl", "set-paused", "false") },
 	{ MODKEY|ControlMask,  		XK_o,      	spawn,          	SHCMD("dunstctl", "set-paused", "true") },
 	{ MODKEY|ShiftMask,  		XK_i,      	spawn,          	SHCMD("dunstctl", "context") },
 	{ MODKEY|ShiftMask,  		XK_o,      	spawn,          	SHCMD("dunstctl", "action") },
-	{ MODKEY|ShiftMask,   		XK_r,      	spawn,          	SHCMD("xr") },
-	{ MODKEY,             		XK_x,      	spawn,          	SHCMD("vesktop") },
+
+	// vpn
 	{ MODKEY,	 		XK_v,      	spawn,          	SHCMD("vpn", "msk") },
 	{ MODKEY|ControlMask, 		XK_v,      	spawn,          	SHCMD("vpn", "-d") },
 	{ MODKEY|ShiftMask,   		XK_v,      	spawn,          	SHCMD("vpn") },
+	{ MODKEY|AltMask,   		XK_v,      	spawn,          	SHCMD("vpn", "-d", "msk") },
+	// volume
 	{ MODKEY|ShiftMask,   		XK_Up,      	spawn,          	SHCMD("volume", "+1") },
 	{ MODKEY|ShiftMask,   		XK_Down,      	spawn,          	SHCMD("volume", "-1") },
 	{ MODKEY,	   		XK_Up,        	spawn,          	SHCMD("volume", "+5") },
@@ -182,9 +177,9 @@ static const Button buttons[] = {
 	{ ClkTagBar,		0,                      Button1,	view,           {0} },
 	{ ClkTagBar,		ShiftMask,              Button1,        tagview,        {0} },
 	{ ClkTagBar,		ControlMask,            Button1,        tag,            {0} },
-	{ ClkTagBar,		Mod1Mask,		Button1,        toggletag,      {0} },
+	{ ClkTagBar,		AltMask,		Button1,        toggletag,      {0} },
 	{ ClkTagBar,		ControlMask|ShiftMask,  Button1,        toggleview,     {0} },
 
-	{ ClkMwSymbol,		0,			Button1,        traversemetaws, {.i = +1} },
-	{ ClkMwSymbol,		0,			Button3,        traversemetaws, {.i = -1} },
+	{ ClkMwSymbol,		0,			Button1,        cyclemetaws, {.i = +1} },
+	{ ClkMwSymbol,		0,			Button3,        cyclemetaws, {.i = -1} },
 };

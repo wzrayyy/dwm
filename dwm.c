@@ -179,6 +179,7 @@ static void configure(Client *c);
 static void configurenotify(XEvent *e);
 static void configurerequest(XEvent *e);
 static Monitor *createmon(void);
+static void cyclemetaws(const Arg *arg);
 static void destroynotify(XEvent *e);
 static void detach(Client *c);
 static void detachstack(Client *c);
@@ -208,8 +209,6 @@ static void maprequest(XEvent *e);
 static void monocle(Monitor *m);
 static void motionnotify(XEvent *e);
 static void movemouse(const Arg *arg);
-static void movemetaws(const Arg *arg);
-static void moveviewmetaws(const Arg *arg);
 static Client *nexttiled(Client *c);
 static void pop(Client *c);
 static void propertynotify(XEvent *e);
@@ -246,7 +245,6 @@ static void togglefloating(const Arg *arg);
 static void togglefullscr(const Arg *arg);
 static void toggletag(const Arg *arg);
 static void toggleview(const Arg *arg);
-static void traversemetaws(const Arg *arg);
 static void unfocus(Client *c, int setfocus);
 static void unmanage(Client *c, int destroyed);
 static void unmapnotify(XEvent *e);
@@ -782,6 +780,11 @@ createmon(void)
 	m->spawnmaster = spawnmaster;
 	strncpy(m->ltsymbol, symbol, sizeof m->ltsymbol);
 	return m;
+}
+
+void cyclemetaws(const Arg *arg) {
+	Arg a = {.ui = (metaws + arg->i + (LENGTH(metaworkspaces))) % LENGTH(metaworkspaces)};
+	viewmetaws(&a);
 }
 
 void
@@ -1329,21 +1332,6 @@ motionnotify(XEvent *e)
 		focus(NULL);
 	}
 	mon = m;
-}
-
-void
-movemetaws(const Arg *arg)
-{
-	const Arg a = {.i = (metaws + arg->i + LENGTH(metaworkspaces)) % LENGTH(metaworkspaces)};
-	tagmetaws(&a);
-}
-
-void
-moveviewmetaws(const Arg *arg)
-{
-	const Arg a = {.i = (metaws + arg->i + LENGTH(metaworkspaces)) % LENGTH(metaworkspaces)};
-	tagmetaws(&a);
-	viewmetaws(&a);
 }
 
 void
@@ -1920,9 +1908,6 @@ spawn(const Arg *arg)
 {
 	struct sigaction sa;
 
-	if (arg->v == dmenucmd)
-		dmenumon[0] = '0' + selmon->num;
-
 	if (fork() == 0) {
 		if (dpy)
 			close(ConnectionNumber(dpy));
@@ -2072,17 +2057,6 @@ toggleview(const Arg *arg)
 		focus(NULL);
 		arrange(selmon);
 	}
-}
-
-void
-traversemetaws(const Arg *arg)
-{
-	if (!arg->i) return;
-	metaws = (metaws + arg->i + (LENGTH(metaworkspaces))) % LENGTH(metaworkspaces);
-	snprintf(mwsymbol, LENGTH(mwsymbol), "%s", metaworkspaces[metaws]);
-	focus(NULL);
-	arrange(NULL);
-	drawbars();
 }
 
 void
@@ -2412,13 +2386,14 @@ view(const Arg *arg)
 void
 viewmetaws(const Arg *arg)
 {
-	if (arg->ui < LENGTH(metaworkspaces)) {
-		metaws = arg->ui;
-		snprintf(mwsymbol, LENGTH(mwsymbol), "%s", metaworkspaces[metaws]);
-		focus(NULL);
-		arrange(NULL);
-		drawbars();
-	}
+	if (arg->ui >= LENGTH(metaworkspaces))
+		return;
+
+	metaws = arg->ui;
+	snprintf(mwsymbol, LENGTH(mwsymbol), "%s", metaworkspaces[metaws]);
+	focus(NULL);
+	arrange(NULL);
+	drawbars();
 }
 
 pid_t
