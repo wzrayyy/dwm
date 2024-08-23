@@ -210,6 +210,7 @@ static void monocle(Monitor *m);
 static void motionnotify(XEvent *e);
 static void movemouse(const Arg *arg);
 static Client *nexttiled(Client *c);
+static void pinmetaws(const Arg* _);
 static void pop(Client *c);
 static void propertynotify(XEvent *e);
 static void quit(const Arg *arg);
@@ -938,8 +939,11 @@ expose(XEvent *e)
 void
 focus(Client *c)
 {
-	if (!c || !ISVISIBLE(c))
-		for (c = selmon->stack; c && (!ISVISIBLE(c) || c->isfloating); c = c->snext);
+	if (!c || !ISVISIBLE(c)) {
+		for (c = selmon->stack; c && (!ISVISIBLE(c) || (!c->isfullscreen && c->isfloating)); c = c->snext);
+		if (!c) for (c = selmon->stack; c && !ISVISIBLE(c); c = c->snext);
+	}
+
 	if (selmon->sel && selmon->sel != c)
 		unfocus(selmon->sel, 0);
 	if (c) {
@@ -1401,6 +1405,19 @@ nexttiled(Client *c)
 {
 	for (; c && (c->isfloating || !ISVISIBLE(c)); c = c->next);
 	return c;
+}
+
+void
+pinmetaws(const Arg *_)
+{
+	int i;
+	Client *c = selmon->sel;
+	if (!selmon || !selmon->sel)
+		return;
+
+	c->mwpin = !c->mwpin;
+	for(i = 0; i < LENGTH(metaworkspaces); ++i)
+		c->tags[i] = c->tags[metaws];
 }
 
 void
