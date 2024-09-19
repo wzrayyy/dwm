@@ -95,7 +95,7 @@ typedef struct Client Client;
 struct Client {
 	char name[256];
 	float mina, maxa;
-	int mwpin;
+	int is_mwpinned;
 	float cfact;
 	int x, y, w, h;
 	int oldx, oldy, oldw, oldh;
@@ -358,7 +358,7 @@ applyrules(Client *c)
 			for (m = mons; m && m->num != r->monitor; m = m->next);
 			if (m)
 				c->mon = m;
-			c->mwpin = r->mwpin;
+			c->is_mwpinned = r->mwpin;
 		}
 	}
 	if (ch.res_class)
@@ -1415,7 +1415,7 @@ pinmetaws(const Arg *_)
 	if (!selmon || !selmon->sel)
 		return;
 
-	c->mwpin = !c->mwpin;
+	c->is_mwpinned = !c->is_mwpinned;
 	for(i = 0; i < LENGTH(metaworkspaces); ++i)
 		c->tags[i] = c->tags[metaws];
 }
@@ -1637,8 +1637,12 @@ scan(void)
 void
 sendmon(Client *c, Monitor *m)
 {
-	if (c->mon == m || c->mwpin)
+        int i = 0;
+	if (c->mon == m )
 		return;
+
+	if (c->is_mwpinned)
+		c->is_mwpinned = 0;
 
 	unfocus(c, 1);
 	detach(c);
@@ -1647,6 +1651,7 @@ sendmon(Client *c, Monitor *m)
 	Client *pc = selmon->stack;
 
 	c->mon = m;
+        for (; i < LENGTH(metaworkspaces); ++i) c->tags[i] = 0;
 	c->tags[metaws] = m->tagset[metaws][m->seltags[metaws]]; /* assign tags of target monitor */
 
 	if (m->spawnmaster)
@@ -1946,7 +1951,7 @@ tag(const Arg *arg)
 	int i;
 	Client *c = selmon->sel;
 	if (c && arg->ui & TAGMASK) {
-		if (!c->mwpin)
+		if (!c->is_mwpinned)
 			c->tags[metaws] = arg->ui & TAGMASK;
 		else for(i = 0; i < LENGTH(metaworkspaces); ++i)
 			c->tags[i] = arg->ui & TAGMASK;
@@ -1964,12 +1969,12 @@ tagmetaws(const Arg *arg)
 		return;
 
 	if (arg->i == -1) {
-		selmon->sel->mwpin = 1;
+		selmon->sel->is_mwpinned = 1;
 		for (i = 0; i < LENGTH(metaworkspaces); ++i)
 			selmon->sel->tags[i] = selmon->sel->tags[metaws];
 	}
 	else {
-		selmon->sel->mwpin = 0;
+		selmon->sel->is_mwpinned = 0;
 		for (i = 0; i < LENGTH(metaworkspaces); ++i)
 			selmon->sel->tags[i] = 0;
 		selmon->sel->tags[arg->i] = selmon->tagset[arg->i][selmon->seltags[arg->i]];
@@ -2055,7 +2060,7 @@ toggletag(const Arg *arg)
 		return;
 	newtags = selmon->sel->tags[metaws] ^ (arg->ui & TAGMASK);
 	if (newtags) {
-		if (!selmon->sel->mwpin)
+		if (!selmon->sel->is_mwpinned)
 			selmon->sel->tags[metaws] = newtags;
 		else for(i = 0; i < LENGTH(metaworkspaces); ++i)
 			selmon->sel->tags[i] = newtags;
