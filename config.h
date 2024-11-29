@@ -42,7 +42,7 @@ static const Rule rules[] = {
 	 *	WM_NAME(STRING) = title
 	 */
 	/* class		instance		title			tags_mask  isfloating	isterminal  noswallow monitor	mwpin*/
-	{ "Firefox",		NULL,	  		"Picture-in-Picture",	0,         1,		0,	    1,	      -1,	0 },
+	{ "firefox-nightly",	"Toolkit",		"Picture-in-Picture",	511,       1,		0,	    1,	      -1,	1 },
 	{ "copyq",     		NULL,     		NULL,		        0,         1,		0,	    0,        -1,	0 },
 	{ "Alacritty",		NULL,	  		NULL,	                0,         0,		1,	    0,        -1,	0 },
 	{ "floating",		NULL, 	  		NULL,	                0,         1,		0,	    0,        -1,	0 },
