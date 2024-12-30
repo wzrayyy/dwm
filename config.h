@@ -47,7 +47,7 @@ static const Rule rules[] = {
 	{ "Alacritty",		NULL,	  		NULL,	                0,         0,		1,	    0,        -1,	0 },
 	{ "floating",		NULL, 	  		NULL,	                0,         1,		0,	    0,        -1,	0 },
 	{ "Spotify",		"spotify",		NULL,	                128,       0,		0,	    0,        0,	1 },
-	{ "AyuGramDesktop",	"ayugram-desktop",	NULL,	                256,       0,		0,	    0,        0,	1 },
+	{ "TelegramDesktop",	"telegram-desktop",	NULL,	                256,       0,		0,	    0,        0,	1 },
 };
 
 
@@ -61,7 +61,6 @@ static const int spawnmaster = 0;
 #define FORCE_VSPLIT 1
 #include "vanitygaps.c"
 
-static const int draw_ltsymbol = 0;
 static const Layout layouts[] = {
 	/* symbol  reverse  function */
 	{ "",      "",      tile },
@@ -118,7 +117,7 @@ static const Key keys[] = {
 
 	// apps
 	{ MODKEY,             		XK_w,		spawn,          	SHCMD("firefox") },
-	{ MODKEY,             		XK_t,      	spawn,          	SHCMD("ayugram-desktop") },
+	{ MODKEY,             		XK_t,      	spawn,          	SHCMD("telegram-desktop") },
 	{ MODKEY|ShiftMask,   		XK_s,      	spawn,          	SHCMD("flameshot", "gui") },
 	{ MODKEY|ShiftMask,   		XK_r,      	spawn,          	SHCMD("xr") },
 
@@ -140,6 +139,8 @@ static const Key keys[] = {
 	{ MODKEY|ShiftMask,   		XK_Down,      	spawn,          	SHCMD("volume", "-1") },
 	{ MODKEY,	   		XK_Up,        	spawn,          	SHCMD("volume", "+5") },
 	{ MODKEY,	   		XK_Down,      	spawn,          	SHCMD("volume", "-5") },
+	{ MODKEY,	   		XK_y,      	setlayout,          	{.v = &layouts[0]} },
+	{ MODKEY|ShiftMask,  		XK_y,      	setlayout,          	{.v = &layouts[2]} },
 
 	// tags
 	TAGKEYS(              		XK_1,		                	0)
